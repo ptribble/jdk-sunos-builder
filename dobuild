@@ -1,0 +1,412 @@
+#!/bin/sh
+#
+# {{{ CDDL HEADER
+#
+# This file and its contents are supplied under the terms of the
+# Common Development and Distribution License ("CDDL"), version 1.0.
+# You may only use this file in accordance with the terms of version
+# 1.0 of the CDDL.
+#
+# A full copy of the text of the CDDL should have accompanied this
+# source. A copy of the CDDL is also available via the Internet at
+# http://www.illumos.org/license/CDDL.
+#
+# }}}
+#
+# Copyright 2023 Peter Tribble
+#
+
+#
+# this is the SunOS jdk builder
+#
+# it will attempt to download, patch, and build any jdk tag, and do so for
+# SPARC and x86, and for illumos and Solaris 11.4
+#
+# it is dependent on the "jdk-sunos-patches" repository, which holds
+# all the patches for each tag
+#
+
+#
+# this is where the repositories are rooted
+#
+THOME=${THOME:-/packages/localsrc/Tribblix}
+
+#
+# this is where the work area is rooted
+# note that if you have a separate pool, /var/tmp is probably a bad idea
+#
+BUILDROOT=${BUILDROOT:-/packages/localsrc/tmp}
+
+#
+# the is where the patches live
+#
+JPATCHDIR=${THOME}/jdk-sunos-patches
+
+#
+# this is where jdk tarballs are cached
+# the 2nd is an oddity for my personal build host
+#
+JCACHEDIR=${THOME}/tarballs
+JCACHEDIR2=${THOME}/large-tarballs
+
+#
+# this is where the build takes place
+#
+JBUILD=${BUILDROOT}/ud
+
+#
+# this is where it will look for bootstrap copies of the jdk
+# (in addition to /usr/jdk/instances)
+#
+JINSTANCES=${BUILDROOT}/jdk/instances
+
+#
+# need gtar and gpatch
+#
+TAR="/usr/bin/gtar"
+GPATCH="/usr/bin/gpatch"
+
+#
+# Usage: dobuild [flags] tag
+#
+# valid flags are:
+# -d [download]
+# -p [patch]
+# -b [build]
+#
+# previous steps will be executed if necessary, but the expected workflow
+# is to first download, then repeat the patch step until clean, then run
+# the build step until that's clean
+#
+DODOWNLOAD=""
+DOPATCH=""
+DOBUILD=""
+
+#
+# variables
+#
+# JARCH - sparc or i386
+# JOS - Solaris or illumos
+#
+# there are additional patches applied dependent on these
+#
+JARCH=$(uname -p)
+case $(uname -o) in
+    illumos)
+	JOS="illumos"
+	;;
+    Solaris)
+	JOS="solaris"
+	;;
+    *)
+	echo "Unknown OS, unable to continue"
+	exit 1
+	;;
+esac
+
+dohelp() {
+    cat <<EOF
+
+Usage: $0 [-b | -d | -h | -p] jdk-version
+
+Download, patch, and build a copy of the specified jdk.
+
+Flags:
+
+-h show this help
+-d just download
+-p unpack and patch, download if necessary
+-b build, unpack, patch, and download if necessary
+EOF
+
+exit 1
+}
+
+#
+# parse any arguments
+#
+while getopts "bdhp" opt; do
+    case $opt in
+	b)
+	    DOBUILD="yes"
+	    ;;
+	d)
+	    DODOWNLOAD="yes"
+	    ;;
+	h)
+	    dohelp
+	    ;;
+	p)
+	    DOPATCH="yes"
+	    ;;
+	*)
+	    echo "ERROR: invalid option $OPTARG"
+            exit 1
+            ;;
+    esac
+done
+shift $((OPTIND-1))
+
+#
+# we should have the jdk version and nothing else
+#
+case $# in
+    0)
+	echo "ERROR: no input, expecting a jdk to build"
+	dohelp
+	;;
+    1)
+	JDKVER="$1"
+	;;
+    *)
+	echo "ERROR: extra input, only expecting a jdk to build"
+	dohelp
+	;;
+esac
+
+#
+# exit with a message
+#
+bail() {
+    echo "ERROR: $1"
+    exit 1
+}
+
+#
+# extract the jdk version, the string will either start jdk-jdk for mainline
+# or jdkXX for the initial release, or jdkXXu for when it's in an update
+# train
+#
+# for mainline, we have to pull the version from the remainder of the string
+# which will look like jdk-jdk-XX-Y or jdk-jdk-XX+Y
+#
+major_java_version() {
+    jstr=$1
+    jver=${jstr%%-*}
+    case $jver in
+	jdk*u)
+	    jver=${jver//u}
+	    ;;
+	jdk)
+	    case $jstr in
+		jdk*+*)
+		    iver=${jstr%+*}
+		    ;;
+		*)
+		    iver=${jstr%-*}
+		    ;;
+	    esac
+	    iver=${iver##*-}
+	    jver=jdk$iver
+	    ;;
+	jdk*)
+	    :
+	    ;;
+	*)
+	    jver=INVALID
+	    ;;
+	esac
+    echo $jver
+}
+
+#
+# return the name of the tarball, if there is one
+# github tarballs are all gz
+# if there's a bz2 tarball it's the old style from the hg repo
+# (which needs to be downloaded manually)
+#
+find_tarball() {
+    JDKVER="$1"
+    if [ -f ${JCACHEDIR}/${JDKVER}.tar.bz2 ]; then
+	echo "${JCACHEDIR}/${JDKVER}.tar.bz2"
+    elif [ -f ${JCACHEDIR2}/${JDKVER}.tar.bz2 ]; then
+	echo "${JCACHEDIR2}/${JDKVER}.tar.bz2"
+    elif [ -f ${JCACHEDIR}/${JDKVER}.tar.gz ]; then
+	echo "${JCACHEDIR}/${JDKVER}.tar.gz"
+    elif [ -f ${JCACHEDIR2}/${JDKVER}.tar.gz ]; then
+	echo "${JCACHEDIR2}/${JDKVER}.tar.gz"
+    fi
+}
+
+#
+# download from github
+#
+# the repo is named after the version
+# note that if it is mainline then it will be the jdk repo
+# also the url doesn't have the repo prefix, but the download gets that added
+# note also that the tag is jdk-xx+yy, but the download is jdk-xx-yy
+#
+do_download() {
+    JDKVER="$1"
+    # jver corresponds to the repo in use
+    jver=${JDKVER%%-*}
+    # jdl is the tag, which has the repo name pulled off
+    jdl=${JDKVER#$jver-}
+    # replace the last - with +, by first replacing all
+    # and then putting the first - back
+    jdl=${jdl//-/+}
+    jdl=${jdl/+/-}
+    jurl="https://github.com/openjdk/${jver}/archive/refs/tags/${jdl}.tar.gz"
+    echo "Download: wget -O ${JCACHEDIR}/${JDKVER}.tar.gz $jurl"
+    wget -O ${JCACHEDIR}/${JDKVER}.tar.gz $jurl
+}
+
+#
+# unpack and apply patches
+# assumes we're in the target location already
+#
+# if we find per-os or per-architecture patch lists apply those too
+#
+do_unpack() {
+    JDKVER="$1"
+    mver=$(major_java_version $JDKVER)
+    tball="$2"
+    $TAR xf $tball
+    cd $JDKVER || bail "unpack failed"
+    cat ${JPATCHDIR}/${mver}/${JDKVER}.pls | while read patcharg patchfile
+    do
+	${GPATCH} ${patcharg/+/ } -i ${JPATCHDIR}/${mver}/${patchfile}
+    done
+    if [ -f ${JPATCHDIR}/${mver}/${JDKVER}.pls.${JARCH} ]; then
+	echo "Applying extra patches for ${JARCH}"
+	cat ${JPATCHDIR}/${mver}/${JDKVER}.pls.${JARCH} | while read patcharg patchfile
+	do
+	    ${GPATCH} ${patcharg/+/ } -i ${JPATCHDIR}/${mver}/${patchfile}
+	done
+    fi
+    if [ -f ${JPATCHDIR}/${mver}/${JDKVER}.pls.${JOS} ]; then
+	echo "Applying extra patches for ${JOS}"
+	cat ${JPATCHDIR}/${mver}/${JDKVER}.pls.${JOS} | while read patcharg patchfile
+	do
+	    ${GPATCH} ${patcharg/+/ } -i ${JPATCHDIR}/${mver}/${patchfile}
+	done
+    fi
+}
+
+#
+# we need to make sure we have a boot jdk
+# we're passed a build script, and parse it for the --with-boot-jdk=
+# entry
+#
+find_boot_jdk() {
+    sfile="$1"
+    if [ ! -f "${sfile}" ]; then
+	echo "ERROR: missing build script $sfile"
+	exit 1
+    fi
+    boot_jdk=""
+    for foo in $(<${sfile})
+    do
+	case $foo in
+	    --with-boot-jdk*)
+		boot_jdk=${foo#*=}
+	    ;;
+	esac
+    done
+    if [ -z "${boot_jdk}" ]; then
+	echo "ERROR: no boot jdk specified"
+	exit 1
+    fi
+    #
+    # if it's not in the normal place, try looking at our alternate
+    # build area?
+    #
+    # this would have to be manually created
+    #
+    cboot_jdk=${boot_jdk}
+    if [ ! -d "${boot_jdk}" ]; then
+	boot_jdk=${boot_jdk/\/usr\/jdk\/instances/${JINSTANCES}}
+    fi
+    #
+    # error if we still can't find it
+    #
+    if [ ! -d "${boot_jdk}" ]; then
+	echo "ERROR: boot jdk ${cboot_jdk} not found"
+	exit 1
+    fi
+    echo ${boot_jdk}
+}
+
+#
+# sanity check/debug
+#
+mver=$(major_java_version $JDKVER)
+tball=$(find_tarball $JDKVER)
+if [ -s "${tball}" ]; then 
+    echo "Found existing download ${tball}"
+fi
+if [ -f ${JPATCHDIR}/${mver}/${JDKVER}.pls ]; then
+    echo "Found patch list for $JDKVER"
+else
+    bail "No patch list for $JDKVER"
+fi
+if [ -d ${JPATCHDIR}/${mver}/${JDKVER} ]; then
+    echo "Found patch directory for $JDKVER"
+else
+    bail "No patch directory for $JDKVER"
+fi
+if [ -f ${JPATCHDIR}/${mver}/${JDKVER}/build.sh ]; then
+    echo "Found build script for $JDKVER"
+else
+    bail "No build script for $JDKVER"
+fi
+
+#
+# from here on we do some work
+#
+
+#
+# phase 1 is to download, if necessary
+# stop if that's all we were asked to do
+#
+if [ -n "${DODOWNLOAD}" ]; then
+    echo "Downloading only"
+fi
+if [ -s "${tball}" ]; then
+    echo "Already downloaded $tball"
+else
+    do_download $JDKVER
+    tball=$(find_tarball $JDKVER)
+fi
+if [ ! -s "${tball}" ]; then
+    bail "no download found"
+fi
+if [ -n "${DODOWNLOAD}" ]; then
+    exit 0
+fi
+
+#
+# phase 2 is to unpack and apply the patches, if necessary
+# we already ensured the tarball was downloaded above
+# stop if that's all we were asked to do
+#
+if [ -n "${DOPATCH}" ]; then
+    echo "Patching only"
+fi
+if [ -d ${JBUILD}/${JDKVER} ]; then
+    echo "Found existing unpacked ${JDKVER}"
+else
+    if [ ! -d ${JBUILD} ]; then
+	mkdir -p "${JBUILD}"
+    fi
+    if [ ! -d ${JBUILD} ]; then
+	bail "cannot create build area $JBUILD"
+    fi
+    cd $JBUILD || bail "cannot cd to build area $JBUILD"
+    do_unpack $JDKVER $tball
+fi
+if [ ! -d ${JBUILD}/${JDKVER} ]; then
+    bail "Unpack of $JDKVER failed"
+fi
+if [ -n "${DOPATCH}" ]; then
+    exit 0
+fi
+
+#
+# phase 3 is to run a build
+# we know the location exists from above
+#
+cd ${JBUILD}/${JDKVER} || bail "cannot cd to build directory $JBUILD/$JDKVER"
+find_boot_jdk ${JPATCHDIR}/${mver}/${JDKVER}/build.sh
+echo "Running ${JPATCHDIR}/${mver}/${JDKVER}/build.sh"
+${JPATCHDIR}/${mver}/${JDKVER}/build.sh
