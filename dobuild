@@ -330,6 +330,15 @@ find_boot_jdk() {
 #
 # sanity check/debug
 #
+if [ ! -d "${JCACHEDIR}" ]; then
+    mkdir -p $JCACHEDIR
+    if [ ! -d "${JCACHEDIR}" ]; then
+    bail "Unable to create ${JCACHEDIR} to store tarballs"
+    fi
+fi
+if [ ! -d "${JPATCHDIR}" ]; then
+    bail "No patch directory, have you checked out jdk-sunos-patches?"
+fi
 mver=$(major_java_version $JDKVER)
 tball=$(find_tarball $JDKVER)
 if [ -s "${tball}" ]; then 
