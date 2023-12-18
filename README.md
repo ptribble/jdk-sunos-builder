@@ -16,7 +16,7 @@ It should simply be a case of uttering
 Look in the "jdk-sunos-patches" repository for the list of known versions.
 
 Unless you're developing a new port, or bisecting a bug, generally the
-latest version of a given release (whoich will probably be one of the
+latest version of a given release (which will probably be one of the
 update releases, ie jdkXXu) ought to be a good place to start. For
 example:
 
@@ -40,7 +40,12 @@ a successful build in order to move on. So, the command
 
     ./dobuild -i jdk12u-jdk-12.0.2+10
 
-will make that version of jdk12 availble, ready for the jdk13 build.
+will make that version of jdk12 available, ready for the jdk13 build.
+
+To use a Liberica build (which would be a jdk11 release) give the absolute
+path to where it was unpacked, for example
+
+    ./dobuild -i /path/to/jdk-11.0.18
 
 ## System Setup
 
