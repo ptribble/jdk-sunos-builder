@@ -30,12 +30,14 @@ patches available as part of this project.
 
 ##System Setup
 
-First decide on a directory tree where you're going to run the builds.
-Then set the variable THOME in your environment to point to it, and
-create it. For example
+First decide on a directory tree where you're going to keep the code and
+run the builds. Then set the variables THOME and BUILDROOT in your
+environment to point to them, and create them. For example
 
     THOME=/var/tmp/java
     mkdir -p $THOME
+    BUILDROOT=/var/tmp/java-build
+    mkdir -p $BUILDROOT
 
 Then checkout the two repositories from github:
 
@@ -64,8 +66,9 @@ development toolchain preinstalled. But you will need:
     pkg install pkg:/developer/gcc-7
     pkg install pkg:/system/font/truetype/dejavu
     pkg install pkg:/developer/versioning/git
+    pkg install pkg:/developer/build/autoconf
 
-And you'll need to download a Java 11 JDK - use the
+And you'll need to download a Java 11 JDK to start from - use the
 [Liberica JDK](https://bell-sw.com/pages/downloads/#jdk-11-lts).
 
 ###Other illumos
