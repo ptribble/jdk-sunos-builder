@@ -28,7 +28,21 @@ example:
 Are all supposed to be supported; later versions need the more extensive
 patches available as part of this project.
 
-##System Setup
+## Promoting a build
+
+Generally, you need to have a functioning build of one version of the jdk
+to build the next version. One point of this project is to allow you to build
+the whole chain from source.
+
+Some systems already have the required jdk versions available, in
+`/usr/jdk/instances`. Others do not. For those, you'll need to install
+a successful build in order to move on. So, the command
+
+    ./dobuild -i jdk12u-jdk-12.0.2+10
+
+will make that version of jdk12 availble, ready for the jdk13 build.
+
+## System Setup
 
 First decide on a directory tree where you're going to keep the code and
 run the builds. Then set the variables THOME and BUILDROOT in your
@@ -47,7 +61,7 @@ Then checkout the two repositories from github:
 
 You'll also need to install some software in order for the builds to work.
 
-###Tribblix
+### Tribblix
 
 Install the following overlays:
 
@@ -58,7 +72,7 @@ Install the following overlays:
     zap install openjdk12 openjdk13 openjdk14 openjdk15 openjdk16
     zap install openjdk18 openjdk19 openjdk20 openjdk21
 
-###Solaris
+### Solaris
 
 I'm assuming you're using the Solaris 11 CBE, which already has most of the
 development toolchain preinstalled. But you will need:
@@ -71,7 +85,7 @@ development toolchain preinstalled. But you will need:
 And you'll need to download a Java 11 JDK to start from - use the
 [Liberica JDK](https://bell-sw.com/pages/downloads/#jdk-11-lts).
 
-###Other illumos
+### Other illumos
 
 On other illumos distributions you'll need to ensure you have a complete
 developer toolchain and as many versions of java as are available in that

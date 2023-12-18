@@ -74,6 +74,7 @@ SED="/usr/bin/sed"
 # -d [download]
 # -p [patch]
 # -b [build]
+# -i [install]
 #
 # previous steps will be executed if necessary, but the expected workflow
 # is to first download, then repeat the patch step until clean, then run
@@ -82,6 +83,7 @@ SED="/usr/bin/sed"
 DODOWNLOAD=""
 DOPATCH=""
 DOBUILD=""
+DOINSTALL=""
 
 #
 # variables
@@ -110,6 +112,7 @@ dohelp() {
     cat <<EOF
 
 Usage: $0 [-b | -d | -h | -p] jdk-version
+       $0 -i jdk-version|/path/to/jdk
 
 Download, patch, and build a copy of the specified jdk.
 
@@ -119,6 +122,7 @@ Flags:
 -d just download
 -p unpack and patch, download if necessary
 -b build, unpack, patch, and download if necessary
+-i link the given jdk into the list of available instances
 EOF
 
 exit 1
@@ -127,7 +131,7 @@ exit 1
 #
 # parse any arguments
 #
-while getopts "bdhp" opt; do
+while getopts "bdhpi" opt; do
     case $opt in
 	b)
 	    DOBUILD="yes"
@@ -140,6 +144,9 @@ while getopts "bdhp" opt; do
 	    ;;
 	p)
 	    DOPATCH="yes"
+	    ;;
+	i)
+	    DOINSTALL="yes"
 	    ;;
 	*)
 	    echo "ERROR: invalid option $OPTARG"
@@ -334,6 +341,116 @@ find_boot_jdk() {
     fi
     echo ${boot_jdk}
 }
+
+#
+# install a copy of the jdk into the alternate area
+#
+# the argument can be either a tag, like a normal build, or
+# an absolute path, presumably to a bootstrap kit you've
+# unpacked somewhere else
+#
+do_install() {
+    JDKVER=$1
+    case $JDKVER in
+	/*)
+	    if [ ! -x "${JDKVER}/bin/java" ]; then
+		bail "unable to find java in {JDKVER}"
+	    fi
+	    # now we need to work out waht version it is
+	    # there's no easy way to do this
+	    # my builds might appear as openjdkXX or jdkXX
+	    # Liberica is eg jdk-11.0.18
+	    NVER=$(basename ${JDKVER})
+	    case $NVER in
+		jdk11*|openjdk11*|jdk-11*|openjdk-11*)
+		    mver=jdk11
+		    ;;
+		jdk12*|openjdk12*|jdk-12*|openjdk-12*)
+		    mver=jdk12
+		    ;;
+		jdk13*|openjdk13*|jdk-13*|openjdk-13*)
+		    mver=jdk13
+		    ;;
+		jdk14*|openjdk14*|jdk-14*|openjdk-14*)
+		    mver=jdk14
+		    ;;
+		jdk15*|openjdk15*|jdk-15*|openjdk-15*)
+		    mver=jdk15
+		    ;;
+		jdk16*|openjdk16*|jdk-16*|openjdk-16*)
+		    mver=jdk16
+		    ;;
+		jdk17*|openjdk17*|jdk-17*|openjdk-17*)
+		    mver=jdk17
+		    ;;
+		jdk18*|openjdk18*|jdk-18*|openjdk-18*)
+		    mver=jdk18
+		    ;;
+		jdk19*|openjdk19*|jdk-19*|openjdk-19*)
+		    mver=jdk19
+		    ;;
+		jdk20*|openjdk20*|jdk-20*|openjdk-20*)
+		    mver=jdk20
+		    ;;
+		jdk21*|openjdk21*|jdk-21*|openjdk-21*)
+		    mver=jdk21
+		    ;;
+		jdk22*|openjdk22*|jdk-22*|openjdk-22*)
+		    mver=jdk22
+		    ;;
+		jdk23*|openjdk23*|jdk-23*|openjdk-23*)
+		    mver=jdk23
+		    ;;
+		*)
+		    bail "unrecognised version"
+		    ;;
+	    esac
+	    # looks like a successful build
+	    rm -f ${JINSTANCES}/${mver}
+	    if [ ! -d "${JINSTANCES}" ]; then
+		mkdir -p ${JINSTANCES}
+	    fi
+	    if [ ! -d "${JINSTANCES}" ]; then
+		bail "unable to create $JINSTANCES"
+	    fi
+	    ln -s ${JDKVER} ${JINSTANCES}/${mver}
+	    echo "Sucessfully installed:"
+	    ${JINSTANCES}/${mver}/bin/java -version
+	    ;;
+	*)
+	    mver=$(major_java_version $JDKVER)
+	    if [ ! -d "${JBUILD}/${JDKVER}" ]; then
+		bail "no built tag $JDKVER"
+	    fi
+	    NJDIR=$(echo ${JBUILD}/${JDKVER}/build/*/images/jdk)
+	    if [ ! -d "${NJDIR}" ]; then
+		bail "unable to find build area"
+	    fi
+	    if [ ! -x "${NJDIR}/bin/java" ]; then
+		bail "unable to find java in build area"
+	    fi
+	    # looks like a successful build
+	    rm -f ${JINSTANCES}/${mver}
+	    if [ ! -d "${JINSTANCES}" ]; then
+		mkdir -p ${JINSTANCES}
+	    fi
+	    if [ ! -d "${JINSTANCES}" ]; then
+		bail "unable to create $JINSTANCES"
+	    fi
+	    ln -s ${NJDIR} ${JINSTANCES}/${mver}
+	    echo "Sucessfully installed:"
+	    ${JINSTANCES}/${mver}/bin/java -version
+	    ;;
+    esac
+}
+
+#
+# catch the install early
+#
+if [ -n "${DOINSTALL}" ]; then
+    do_install $JDKVER
+    exit 0
+fi
 
 #
 # sanity check/debug
