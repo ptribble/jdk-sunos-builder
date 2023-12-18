@@ -61,10 +61,11 @@ JBUILD=${BUILDROOT}/ud
 JINSTANCES=${BUILDROOT}/jdk/instances
 
 #
-# need gtar and gpatch
+# need gtar gpatch sed/gsed
 #
 TAR="/usr/bin/gtar"
 GPATCH="/usr/bin/gpatch"
+SED="/usr/bin/sed"
 
 #
 # Usage: dobuild [flags] tag
@@ -97,6 +98,7 @@ case $(uname -o) in
 	;;
     Solaris)
 	JOS="solaris"
+	SED="/usr/gnu/bin/sed"
 	;;
     *)
 	echo "Unknown OS, unable to continue"
@@ -316,13 +318,19 @@ find_boot_jdk() {
     cboot_jdk=${boot_jdk}
     if [ ! -d "${boot_jdk}" ]; then
 	boot_jdk=${boot_jdk/\/usr\/jdk\/instances/${JINSTANCES}}
-    fi
-    #
-    # error if we still can't find it
-    #
-    if [ ! -d "${boot_jdk}" ]; then
-	echo "ERROR: boot jdk ${cboot_jdk} not found"
-	exit 1
+	#
+	# error if we still can't find it
+	#
+	echo "Trying alternate boot jdk"
+	if [ ! -d "${boot_jdk}" ]; then
+	    echo "ERROR: boot jdk ${cboot_jdk} not found"
+	    exit 1
+	fi
+	#
+	# we found it; rewrite the build script
+	# need to used gsed for Solaris
+	#
+	${SED} -i s:${cboot_jdk}:${boot_jdk}: ${sfile}
     fi
     echo ${boot_jdk}
 }
@@ -419,3 +427,9 @@ cd ${JBUILD}/${JDKVER} || bail "cannot cd to build directory $JBUILD/$JDKVER"
 find_boot_jdk ${JPATCHDIR}/${mver}/${JDKVER}/build.sh
 echo "Running ${JPATCHDIR}/${mver}/${JDKVER}/build.sh"
 ${JPATCHDIR}/${mver}/${JDKVER}/build.sh
+
+#
+# if we rewrote the build script, restore it
+#
+cd ${JPATCHDIR}
+git restore ${mver}/${JDKVER}/build.sh
