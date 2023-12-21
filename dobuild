@@ -356,7 +356,7 @@ do_install() {
 	    if [ ! -x "${JDKVER}/bin/java" ]; then
 		bail "unable to find java in {JDKVER}"
 	    fi
-	    # now we need to work out waht version it is
+	    # now we need to work out what version it is
 	    # there's no easy way to do this
 	    # my builds might appear as openjdkXX or jdkXX
 	    # Liberica is eg jdk-11.0.18
@@ -414,7 +414,7 @@ do_install() {
 		bail "unable to create $JINSTANCES"
 	    fi
 	    ln -s ${JDKVER} ${JINSTANCES}/${mver}
-	    echo "Sucessfully installed:"
+	    echo "Successfully installed:"
 	    ${JINSTANCES}/${mver}/bin/java -version
 	    ;;
 	*)
@@ -438,7 +438,7 @@ do_install() {
 		bail "unable to create $JINSTANCES"
 	    fi
 	    ln -s ${NJDIR} ${JINSTANCES}/${mver}
-	    echo "Sucessfully installed:"
+	    echo "Successfully installed:"
 	    ${JINSTANCES}/${mver}/bin/java -version
 	    ;;
     esac
