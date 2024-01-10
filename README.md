@@ -1,3 +1,5 @@
+# Building OpenJDK on SunOS
+
 This is the (work in progress) SunOS jdk builder.
 
 The aim is to attempt to download, patch, and build any relevant jdk tag,
@@ -95,3 +97,8 @@ And you'll need to download a Java 11 JDK to start from - use the
 On other illumos distributions you'll need to ensure you have a complete
 developer toolchain and as many versions of java as are available in that
 distribution.
+
+## Documentation
+
+More extensive [documentation](doc/README.md) is available, to help you
+through the general porting process.
