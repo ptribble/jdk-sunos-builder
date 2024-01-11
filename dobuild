@@ -251,10 +251,17 @@ do_download() {
     jver=${JDKVER%%-*}
     # jdl is the tag, which has the repo name pulled off
     jdl=${JDKVER#$jver-}
-    # replace the last - with +, by first replacing all
-    # and then putting the first - back
-    jdl=${jdl//-/+}
-    jdl=${jdl/+/-}
+    case $jdl in
+	*-ga)
+	    :
+	    ;;
+	*)
+	    # replace the last - with +, by first replacing all
+	    # and then putting the first - back
+	    jdl=${jdl//-/+}
+	    jdl=${jdl/+/-}
+	    ;;
+    esac
     jurl="https://github.com/openjdk/${jver}/archive/refs/tags/${jdl}.tar.gz"
     echo "Download: wget -O ${JCACHEDIR}/${JDKVER}.tar.gz $jurl"
     wget -O ${JCACHEDIR}/${JDKVER}.tar.gz $jurl
