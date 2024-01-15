@@ -111,7 +111,7 @@ esac
 dohelp() {
     cat <<EOF
 
-Usage: $0 [-b | -d | -h | -p] jdk-version
+Usage: $0 [-b | -c cpu | -d | -h | -o os | -p] jdk-version
        $0 -i jdk-version|/path/to/jdk
 
 Download, patch, and build a copy of the specified jdk.
@@ -122,6 +122,8 @@ Flags:
 -d just download
 -p unpack and patch, download if necessary
 -b build, unpack, patch, and download if necessary
+-c override cpu (sparc or x86)
+-c override os (illumos or Solaris)
 -i link the given jdk into the list of available instances
 EOF
 
@@ -131,7 +133,7 @@ exit 1
 #
 # parse any arguments
 #
-while getopts "bdhpi" opt; do
+while getopts "bdhpic:o:" opt; do
     case $opt in
 	b)
 	    DOBUILD="yes"
@@ -147,6 +149,12 @@ while getopts "bdhpi" opt; do
 	    ;;
 	i)
 	    DOINSTALL="yes"
+	    ;;
+	c)
+	    JARCH="$OPTARG"
+	    ;;
+	o)
+	    JOS="$OPTARG"
 	    ;;
 	*)
 	    echo "ERROR: invalid option $OPTARG"
