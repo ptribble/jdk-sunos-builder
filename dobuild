@@ -13,7 +13,7 @@
 #
 # }}}
 #
-# Copyright 2023 Peter Tribble
+# Copyright 2024 Peter Tribble
 #
 
 #
@@ -73,7 +73,9 @@ SED="/usr/bin/sed"
 # valid flags are:
 # -d [download]
 # -p [patch]
+# -P [patch, remove existing copy first]
 # -b [build]
+# -B [build, remove existing copy first]
 # -i [install]
 #
 # previous steps will be executed if necessary, but the expected workflow
@@ -84,6 +86,7 @@ DODOWNLOAD=""
 DOPATCH=""
 DOBUILD=""
 DOINSTALL=""
+DOCLEAN=""
 
 #
 # variables
@@ -111,7 +114,7 @@ esac
 dohelp() {
     cat <<EOF
 
-Usage: $0 [-b | -c cpu | -d | -h | -o os | -p] jdk-version
+Usage: $0 [-b | -B | -c cpu | -d | -h | -o os | -p | -P] jdk-version
        $0 -i jdk-version|/path/to/jdk
 
 Download, patch, and build a copy of the specified jdk.
@@ -121,9 +124,11 @@ Flags:
 -h show this help
 -d just download
 -p unpack and patch, download if necessary
+-P like -p, remove existing copy and start over
 -b build, unpack, patch, and download if necessary
+-B like -b, remove existing copy and start over
 -c override cpu (sparc or x86)
--c override os (illumos or Solaris)
+-o override os (illumos or Solaris)
 -i link the given jdk into the list of available instances
 EOF
 
@@ -133,10 +138,14 @@ exit 1
 #
 # parse any arguments
 #
-while getopts "bdhpic:o:" opt; do
+while getopts "bBdhpPic:o:" opt; do
     case $opt in
 	b)
 	    DOBUILD="yes"
+	    ;;
+	B)
+	    DOBUILD="yes"
+	    DOCLEAN="yes"
 	    ;;
 	d)
 	    DODOWNLOAD="yes"
@@ -146,6 +155,10 @@ while getopts "bdhpic:o:" opt; do
 	    ;;
 	p)
 	    DOPATCH="yes"
+	    ;;
+	P)
+	    DOPATCH="yes"
+	    DOCLEAN="yes"
 	    ;;
 	i)
 	    DOINSTALL="yes"
@@ -531,6 +544,15 @@ fi
 #
 if [ -n "${DOPATCH}" ]; then
     echo "Patching only"
+fi
+#
+# with -P and -B we clean up an existing copy
+#
+if [ -n "${DOCLEAN}" ]; then
+    if [ -d ${JBUILD}/${JDKVER} ]; then
+	echo "Removing existing unpacked ${JDKVER}"
+	rm -fr ${JBUILD}/${JDKVER}
+    fi
 fi
 if [ -d ${JBUILD}/${JDKVER} ]; then
     echo "Found existing unpacked ${JDKVER}"

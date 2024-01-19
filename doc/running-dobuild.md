@@ -17,9 +17,12 @@ With -b, download if necessary, apply patches, and run a build.
 
 So, -b is the normal operation.
 
+The variants -P and -B will delete an existing unpacked copy and start
+afresh.
+
 In practice, what you'll want to do in development is use -p to check
-if any new patches apply cleanly, then once you're happy do the build
-step.
+if any new patches apply cleanly, repeat with -P as you develop changes
+to the patches, then once you're happy do the build step.
 
 ## Using a build to compile another
 
