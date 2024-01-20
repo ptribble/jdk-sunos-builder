@@ -23,7 +23,7 @@ get interesting.
 The general approach if something breaks is to look at another platform
 (or architecture) to see what's changed between this tag and the previous
 successful one. If you get a compilation failure you can see which area (ie
-wether it's in os, cpu, or os_cpu) appears affected. Then look at maybe
+whether it's in os, cpu, or os_cpu) appears affected. Then look at maybe
 linux or aix to see what's changed there.
 
 A lot of the changes I've seen are simple method renaming or signature
