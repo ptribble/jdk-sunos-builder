@@ -29,5 +29,5 @@ linux or aix to see what's changed there.
 A lot of the changes I've seen are simple method renaming or signature
 changes. In some cases where a new method is added, all you need to do
 is provide a stub. If a common method is removed, then check to see if it's
-in use anywhere. If it's not it can juust be removed; if it's used locally
+in use anywhere. If it's not it can just be removed; if it's used locally
 then maybe you just just move the scope to be local (or os::Solaris).
