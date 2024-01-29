@@ -34,3 +34,17 @@ won't have that. So you can use the -i flag, for example
     ./dobuild -i jdk12u-jdk-12.0.2+10
 
 will make that version of jdk12 available, ready for the jdk13 build.
+
+## Exporting a build
+
+The build process will generate a fully deployable image of the jdk, but it
+will be embedded in the build directory. The -i flag above knows where to
+find the image for use within another build, but if you want to deploy the
+build somewhere else then you'll need a standalone copy.
+
+You can use the -e flag for this
+
+    ./dobuild -e jdk-jdk-16-24
+
+will generate a tarball called jdk-jdk-16-24.tar.gz that will unpack into a
+directory jdk-jdk-16-24, and will tell you where it's put it.

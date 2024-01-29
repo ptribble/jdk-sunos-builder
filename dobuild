@@ -61,6 +61,11 @@ JBUILD=${BUILDROOT}/ud
 JINSTANCES=${BUILDROOT}/jdk/instances
 
 #
+# this is where exported tarballs will be placed
+#
+JEXPORTDIR=${BUILDROOT}/exports
+
+#
 # need gtar gpatch sed/gsed
 #
 TAR="/usr/bin/gtar"
@@ -116,6 +121,7 @@ dohelp() {
 
 Usage: $0 [-b | -B | -c cpu | -d | -h | -o os | -p | -P] jdk-version
        $0 -i jdk-version|/path/to/jdk
+       $0 -e jdk-version
 
 Download, patch, and build a copy of the specified jdk.
 
@@ -130,6 +136,7 @@ Flags:
 -c override cpu (sparc or x86)
 -o override os (illumos or Solaris)
 -i link the given jdk into the list of available instances
+-e export the given built jdk to a tarball
 EOF
 
 exit 1
@@ -138,7 +145,7 @@ exit 1
 #
 # parse any arguments
 #
-while getopts "bBdhpPic:o:" opt; do
+while getopts "bBdhpPiec:o:" opt; do
     case $opt in
 	b)
 	    DOBUILD="yes"
@@ -162,6 +169,9 @@ while getopts "bBdhpPic:o:" opt; do
 	    ;;
 	i)
 	    DOINSTALL="yes"
+	    ;;
+	e)
+	    DOEXPORT="yes"
 	    ;;
 	c)
 	    JARCH="$OPTARG"
@@ -473,10 +483,60 @@ do_install() {
 }
 
 #
+# create a versioned tarball of a jdk image
+#
+do_export() {
+    JDKVER=$1
+    if [ ! -d "${JEXPORTDIR}" ]; then
+	mkdir -p "${JEXPORTDIR}"
+    fi
+    if [ ! -d "${JEXPORTDIR}" ]; then
+	bail "Unable to create ${JEXPORTDIR} to store images"
+    fi
+    mver=$(major_java_version $JDKVER)
+    if [ ! -d "${JBUILD}/${JDKVER}" ]; then
+	bail "no built tag $JDKVER"
+    fi
+    NJDIR=$(echo ${JBUILD}/${JDKVER}/build/*/images/jdk)
+    if [ ! -d "${NJDIR}" ]; then
+	bail "unable to find build area"
+    fi
+    if [ ! -x "${NJDIR}/bin/java" ]; then
+	bail "unable to find java in build area"
+    fi
+    # looks like a successful build
+    # the image we start from is unversioned, and we want a versioned
+    # tarball that unpacks into a versioned directory
+    # so create a staging area
+    TDIR=/tmp/jdk-exporter.$$
+    rm -fr $TDIR
+    mkdir $TDIR
+    if [ ! -d "${TDIR}" ]; then
+	bail "unable to create staging area"
+    fi
+    # now we can copy things across
+    echo "Creating tarball"
+    cd ${JBUILD}/${JDKVER}/build/*/images
+    tar cf - jdk | ( cd $TDIR ; tar xf -)
+    cd $TDIR
+    mv jdk $JDKVER
+    tar cf - $JDKVER | gzip > ${JEXPORTDIR}/${JDKVER}.tar.gz
+    ls -l ${JEXPORTDIR}/${JDKVER}.tar.gz
+}
+
+#
 # catch the install early
 #
 if [ -n "${DOINSTALL}" ]; then
     do_install $JDKVER
+    exit 0
+fi
+
+#
+# catch the export early
+#
+if [ -n "${DOEXPORT}" ]; then
+    do_export $JDKVER
     exit 0
 fi
 
