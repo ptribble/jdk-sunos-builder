@@ -714,13 +714,26 @@ fi
 # we know the location exists from above
 #
 cd ${JBUILD}/${JDKVER} || bail "cannot cd to build directory $JBUILD/$JDKVER"
-find_boot_jdk ${JPATCHDIR}/${mver}/${JDKVER}/build.sh
-echo "Running ${JPATCHDIR}/${mver}/${JDKVER}/build.sh"
-${JPATCHDIR}/${mver}/${JDKVER}/build.sh
+NJDIR=$(echo build/*/images/jdk)
+if [ -x "${NJDIR}/bin/java" ]; then
+    echo "Build already ran successfully"
+else
+    find_boot_jdk ${JPATCHDIR}/${mver}/${JDKVER}/build.sh
+    echo "Running ${JPATCHDIR}/${mver}/${JDKVER}/build.sh"
+    ${JPATCHDIR}/${mver}/${JDKVER}/build.sh
+    #
+    # if we rewrote the build script, restore it
+    # old Solaris git doesn't understand restore, do it the old way
+    #
+    cd ${JPATCHDIR}
+    git checkout -- ${mver}/${JDKVER}/build.sh
+fi
 
 #
-# if we rewrote the build script, restore it
-# old Solaris git doesn't understand restore, do it the old way
+# was the build successful?
 #
-cd ${JPATCHDIR}
-git checkout -- ${mver}/${JDKVER}/build.sh
+if [ -x "${NJDIR}/bin/java" ]; then
+    echo "Build of ${JDKVER} completed successfully"
+else
+    bail "Build of ${JDKVER} failed"
+fi
