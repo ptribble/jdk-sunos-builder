@@ -66,6 +66,11 @@ JINSTANCES=${BUILDROOT}/jdk/instances
 JEXPORTDIR=${BUILDROOT}/exports
 
 #
+# this is where extra components needed for testing will be placed
+#
+TESTROOT=${BUILDROOT}/test
+
+#
 # need gtar gpatch sed/gsed
 #
 TAR="/usr/bin/gtar"
@@ -119,7 +124,7 @@ esac
 dohelp() {
     cat <<EOF
 
-Usage: $0 [-b | -B | -c cpu | -d | -h | -o os | -p | -P] jdk-version
+Usage: $0 [-t] [-b | -B | -c cpu | -d | -h | -o os | -p | -P] jdk-version
        $0 -i jdk-version|/path/to/jdk
        $0 -e jdk-version
 
@@ -133,6 +138,7 @@ Flags:
 -P like -p, remove existing copy and start over
 -b build, unpack, patch, and download if necessary
 -B like -b, remove existing copy and start over
+-t enable and run tests
 -c override cpu (sparc or x86)
 -o override os (illumos or Solaris)
 -i link the given jdk into the list of available instances
@@ -145,7 +151,7 @@ exit 1
 #
 # parse any arguments
 #
-while getopts "bBdhpPiec:o:" opt; do
+while getopts "bBdhpPtiec:o:" opt; do
     case $opt in
 	b)
 	    DOBUILD="yes"
@@ -166,6 +172,9 @@ while getopts "bBdhpPiec:o:" opt; do
 	P)
 	    DOPATCH="yes"
 	    DOCLEAN="yes"
+	    ;;
+	t)
+	    DOTEST="yes"
 	    ;;
 	i)
 	    DOINSTALL="yes"
@@ -210,6 +219,64 @@ esac
 bail() {
     echo "ERROR: $1"
     exit 1
+}
+
+#
+# download and install gtest and jtreg, as needed to run the test
+# suite(s)
+#
+initialize_test() {
+    if [ ! -d "${TESTROOT}" ]; then
+	mkdir -p "${TESTROOT}"
+    fi
+    if [ ! -d "${TESTROOT}" ]; then
+	bail "Unable to create directory ${TESTROOT}"
+    fi
+    cd "${TESTROOT}" || bail "Unable to cd to ${TESTROOT}"
+    if [ ! -d googletest ]; then
+	git clone https://github.com/google/googletest googletest
+	if [ ! -d googletest ]; then
+	    bail "Checkout of googletest failed"
+	fi
+	#
+	# different versions of the jdk need different versions of
+	# googletest, so check out all the branches we might need
+	#
+	git clone -b v1.14.0 googletest googletest-1.14.0
+	git clone -b v1.13.0 googletest googletest-1.13.0
+	git clone -b release-1.12.1 googletest googletest-1.12.1
+	git clone -b release-1.12.0 googletest googletest-1.12.0
+	git clone -b release-1.11.0 googletest googletest-1.11.0
+	git clone -b release-1.10.0 googletest googletest-1.10.0
+	git clone -b release-1.8.1 googletest googletest-1.8.1
+    fi
+    #
+    # normally we expect a minimum version of jtreg, so can use the same
+    # copy for everything
+    #
+    # there isn't a convenient download, so use the version packaged for
+    # Tribblix (a zap file is an SVR4 package in filesystem format wrapped
+    # up inside a zip file that we can just unzip)
+    #
+    # this won't work for jdk8, as the current jtreg needs to use jdk11
+    # or later
+    #
+    JTVER=7.3.1.0
+    if [ ! -d jtreg ]; then
+	wget -O ${JCACHEDIR}/TRIBjtreg.${JTVER}.zap https://pkgs.tribblix.org/tribblix-m33/TRIBjtreg.${JTVER}.zap
+	if [ ! -f "${JCACHEDIR}/TRIBjtreg.${JTVER}.zap" ]; then
+	    bail "Unable to download jtreg"
+	fi
+	unzip ${JCACHEDIR}/TRIBjtreg.${JTVER}.zap
+	if [ ! -d TRIBjtreg/reloc/usr/versions/jtreg ]; then
+	    bail "Unpack of jtreg failed"
+	fi
+	mv TRIBjtreg/reloc/usr/versions/jtreg .
+	rm -fr TRIBjtreg
+    fi
+    if [ ! -d jtreg ]; then
+	bail "Installation of jtreg failed"
+    fi
 }
 
 #
@@ -552,6 +619,15 @@ fi
 if [ ! -d "${JPATCHDIR}" ]; then
     bail "No patch directory, have you checked out jdk-sunos-patches?"
 fi
+
+#
+# if testing, we need to make sure the test components are downloaded
+# and installed, so do that now (it needs JCACHEDIR)
+#
+if [ -n "{DOTEST}" ]; then
+    initialize_test
+fi
+
 mver=$(major_java_version $JDKVER)
 tball=$(find_tarball $JDKVER)
 if [ -s "${tball}" ]; then 
