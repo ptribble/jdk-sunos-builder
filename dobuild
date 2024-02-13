@@ -720,6 +720,7 @@ ${JPATCHDIR}/${mver}/${JDKVER}/build.sh
 
 #
 # if we rewrote the build script, restore it
+# old Solaris git doesn't understand restore, do it the old way
 #
 cd ${JPATCHDIR}
-git restore ${mver}/${JDKVER}/build.sh
+git checkout -- ${mver}/${JDKVER}/build.sh
