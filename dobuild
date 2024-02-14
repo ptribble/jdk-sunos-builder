@@ -624,7 +624,7 @@ fi
 # if testing, we need to make sure the test components are downloaded
 # and installed, so do that now (it needs JCACHEDIR)
 #
-if [ -n "{DOTEST}" ]; then
+if [ -n "${DOTEST}" ]; then
     initialize_test
 fi
 
