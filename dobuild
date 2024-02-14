@@ -732,6 +732,8 @@ fi
 #
 # was the build successful?
 #
+cd ${JBUILD}/${JDKVER} || bail "cannot cd to build directory $JBUILD/$JDKVER"
+NJDIR=$(echo build/*/images/jdk)
 if [ -x "${NJDIR}/bin/java" ]; then
     echo "Build of ${JDKVER} completed successfully"
 else
