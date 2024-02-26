@@ -448,6 +448,40 @@ find_boot_jdk() {
 }
 
 #
+# enable gtest at configure time
+#
+enable_gtest() {
+    jmver="$1"
+    sfile="$2"
+    if [ ! -f "${sfile}" ]; then
+	echo "ERROR: missing build script $sfile"
+	exit 1
+    fi
+    #
+    # different versions of the jdk need different gtest versions
+    # but there's a large element of guesswork in this
+    #
+    case $jmver in
+	jdk22|jdk23|jdk24|jdk25)
+	    gver="1.14.0"
+	    ;;
+	jdk21)
+	    gver="1.13.0"
+	    ;;
+	*)
+	    gver="1.8.1"
+	    ;;
+    esac
+    #
+    # rewrite the build script
+    # there should be a --with-boot-jdk piece, expand that
+    # (if there isn't, we fail in find_boot_jdk, so no need to check here)
+    # need to used gsed for Solaris
+    #
+    ${SED} -i "s:--with-boot-jdk:--with-gtest=${TESTROOT}/googletest-${gver} --with-boot-jdk:" ${sfile}
+}
+
+#
 # install a copy of the jdk into the alternate area
 #
 # the argument can be either a tag, like a normal build, or
@@ -459,7 +493,7 @@ do_install() {
     case $JDKVER in
 	/*)
 	    if [ ! -x "${JDKVER}/bin/java" ]; then
-		bail "unable to find java in {JDKVER}"
+		bail "unable to find java in ${JDKVER}"
 	    fi
 	    # now we need to work out what version it is
 	    # there's no easy way to do this
@@ -718,6 +752,22 @@ NJDIR=$(echo build/*/images/jdk)
 if [ -x "${NJDIR}/bin/java" ]; then
     echo "Build already ran successfully"
 else
+    if [ -n "${DOTEST}" ]; then
+	#
+	# there are 2 ways for configure to pick up jtreg, the simplest
+	# is to set JT_HOME
+	#
+	JT_HOME="${TESTROOT}/jtreg"
+	export JT_HOME
+	#
+	# but gtest involves rewriting the configure command
+	#
+	enable_gtest ${mver} ${JPATCHDIR}/${mver}/${JDKVER}/build.sh
+	#
+	# put in a little marker to say we've actually done this
+	#
+	touch .jdk_sunos_test_enabled
+    fi
     find_boot_jdk ${JPATCHDIR}/${mver}/${JDKVER}/build.sh
     echo "Running ${JPATCHDIR}/${mver}/${JDKVER}/build.sh"
     ${JPATCHDIR}/${mver}/${JDKVER}/build.sh
@@ -739,3 +789,34 @@ if [ -x "${NJDIR}/bin/java" ]; then
 else
     bail "Build of ${JDKVER} failed"
 fi
+
+#
+# if we were asked to just do a build, stop here
+#
+if [ -n "${DOBUILD}" ]; then
+    exit 0
+fi
+
+#
+# if testing isn't requested, also stop
+#
+if [ ! -n "${DOTEST}" ]; then
+    exit 0
+fi
+
+#
+# run the tests
+#
+cd ${JBUILD}/${JDKVER} || bail "cannot cd to build directory $JBUILD/$JDKVER"
+#
+# the tests need to be configured at build time, first check
+# if they were
+#
+if [ ! -f .jdk_sunos_test_enabled ]; then
+    bail "build was not configured for testing"
+fi
+#
+# these are the base tests, we need a way to extend them later
+#
+env PATH=/usr/bin:/usr/sbin:/usr/sfw/bin:/usr/gnu/bin gmake test TEST="gtest:all"
+env PATH=/usr/bin:/usr/sbin:/usr/sfw/bin:/usr/gnu/bin gmake test-tier1
