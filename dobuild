@@ -377,20 +377,20 @@ do_unpack() {
     tball="$2"
     $TAR xf $tball
     cd $JDKVER || bail "unpack failed"
-    cat ${JPATCHDIR}/${mver}/${JDKVER}.pls | while read patcharg patchfile
+    cat ${JPATCHDIR}/${mver}/${JDKALIAS}.pls | while read patcharg patchfile
     do
 	${GPATCH} ${patcharg/+/ } -i ${JPATCHDIR}/${mver}/${patchfile}
     done
-    if [ -f ${JPATCHDIR}/${mver}/${JDKVER}.pls.${JARCH} ]; then
+    if [ -f ${JPATCHDIR}/${mver}/${JDKALIAS}.pls.${JARCH} ]; then
 	echo "Applying extra patches for ${JARCH}"
-	cat ${JPATCHDIR}/${mver}/${JDKVER}.pls.${JARCH} | while read patcharg patchfile
+	cat ${JPATCHDIR}/${mver}/${JDKALIAS}.pls.${JARCH} | while read patcharg patchfile
 	do
 	    ${GPATCH} ${patcharg/+/ } -i ${JPATCHDIR}/${mver}/${patchfile}
 	done
     fi
-    if [ -f ${JPATCHDIR}/${mver}/${JDKVER}.pls.${JOS} ]; then
+    if [ -f ${JPATCHDIR}/${mver}/${JDKALIAS}.pls.${JOS} ]; then
 	echo "Applying extra patches for ${JOS}"
-	cat ${JPATCHDIR}/${mver}/${JDKVER}.pls.${JOS} | while read patcharg patchfile
+	cat ${JPATCHDIR}/${mver}/${JDKALIAS}.pls.${JOS} | while read patcharg patchfile
 	do
 	    ${GPATCH} ${patcharg/+/ } -i ${JPATCHDIR}/${mver}/${patchfile}
 	done
@@ -662,22 +662,33 @@ if [ -n "${DOTEST}" ]; then
     initialize_test
 fi
 
+#
+# there are 2 versions we use
+# JDKVER is the version we want to build
+# JDKALIAS is the version of the patches/scripts we use
+#
+JDKALIAS=${JDKVER}
+
 mver=$(major_java_version $JDKVER)
+if [ -f ${JPATCHDIR}/${mver}/${JDKVER}.alias ]; then
+    JDKALIAS=$(<${JPATCHDIR}/${mver}/${JDKVER}.alias)
+    echo "Found alias $JDKALIAS for $JDKVER"
+fi
 tball=$(find_tarball $JDKVER)
 if [ -s "${tball}" ]; then 
     echo "Found existing download ${tball}"
 fi
-if [ -f ${JPATCHDIR}/${mver}/${JDKVER}.pls ]; then
+if [ -f ${JPATCHDIR}/${mver}/${JDKALIAS}.pls ]; then
     echo "Found patch list for $JDKVER"
 else
     bail "No patch list for $JDKVER"
 fi
-if [ -d ${JPATCHDIR}/${mver}/${JDKVER} ]; then
+if [ -d ${JPATCHDIR}/${mver}/${JDKALIAS} ]; then
     echo "Found patch directory for $JDKVER"
 else
     bail "No patch directory for $JDKVER"
 fi
-if [ -f ${JPATCHDIR}/${mver}/${JDKVER}/build.sh ]; then
+if [ -f ${JPATCHDIR}/${mver}/${JDKALIAS}/build.sh ]; then
     echo "Found build script for $JDKVER"
 else
     bail "No build script for $JDKVER"
@@ -762,21 +773,21 @@ else
 	#
 	# but gtest involves rewriting the configure command
 	#
-	enable_gtest ${mver} ${JPATCHDIR}/${mver}/${JDKVER}/build.sh
+	enable_gtest ${mver} ${JPATCHDIR}/${mver}/${JDKALIAS}/build.sh
 	#
 	# put in a little marker to say we've actually done this
 	#
 	touch .jdk_sunos_test_enabled
     fi
-    find_boot_jdk ${JPATCHDIR}/${mver}/${JDKVER}/build.sh
-    echo "Running ${JPATCHDIR}/${mver}/${JDKVER}/build.sh"
-    ${JPATCHDIR}/${mver}/${JDKVER}/build.sh
+    find_boot_jdk ${JPATCHDIR}/${mver}/${JDKALIAS}/build.sh
+    echo "Running ${JPATCHDIR}/${mver}/${JDKALIAS}/build.sh"
+    ${JPATCHDIR}/${mver}/${JDKALIAS}/build.sh
     #
     # if we rewrote the build script, restore it
     # old Solaris git doesn't understand restore, do it the old way
     #
     cd ${JPATCHDIR}
-    git checkout -- ${mver}/${JDKVER}/build.sh
+    git checkout -- ${mver}/${JDKALIAS}/build.sh
 fi
 
 #
