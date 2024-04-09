@@ -97,6 +97,7 @@ DOPATCH=""
 DOBUILD=""
 DOINSTALL=""
 DOCLEAN=""
+JFEATURE=""
 
 #
 # variables
@@ -124,7 +125,7 @@ esac
 dohelp() {
     cat <<EOF
 
-Usage: $0 [-t] [-b | -B | -c cpu | -d | -h | -o os | -p | -P] jdk-version
+Usage: $0 [-t] [-b | -B | -c cpu | -d | -f feature | -h | -o os | -p | -P] jdk-version
        $0 -i jdk-version|/path/to/jdk
        $0 -e jdk-version
 
@@ -141,6 +142,7 @@ Flags:
 -t enable and run tests
 -c override cpu (sparc or x86)
 -o override os (illumos or Solaris)
+-f enable given feature
 -i link the given jdk into the list of available instances
 -e export the given built jdk to a tarball
 EOF
@@ -151,7 +153,7 @@ exit 1
 #
 # parse any arguments
 #
-while getopts "bBdhpPtiec:o:" opt; do
+while getopts "bBdhpPtiec:o:f:" opt; do
     case $opt in
 	b)
 	    DOBUILD="yes"
@@ -187,6 +189,9 @@ while getopts "bBdhpPtiec:o:" opt; do
 	    ;;
 	o)
 	    JOS="$OPTARG"
+	    ;;
+	f)
+	    JFEATURE="$OPTARG"
 	    ;;
 	*)
 	    echo "ERROR: invalid option $OPTARG"
@@ -369,7 +374,7 @@ do_download() {
 # unpack and apply patches
 # assumes we're in the target location already
 #
-# if we find per-os or per-architecture patch lists apply those too
+# if we find per-os or per-architecture or feature patch lists apply those too
 #
 do_unpack() {
     JDKVER="$1"
@@ -382,15 +387,22 @@ do_unpack() {
 	${GPATCH} ${patcharg/+/ } -i ${JPATCHDIR}/${mver}/${patchfile}
     done
     if [ -f ${JPATCHDIR}/${mver}/${JDKALIAS}.pls.${JARCH} ]; then
-	echo "Applying extra patches for ${JARCH}"
+	echo "Applying extra patches for cpu ${JARCH}"
 	cat ${JPATCHDIR}/${mver}/${JDKALIAS}.pls.${JARCH} | while read patcharg patchfile
 	do
 	    ${GPATCH} ${patcharg/+/ } -i ${JPATCHDIR}/${mver}/${patchfile}
 	done
     fi
     if [ -f ${JPATCHDIR}/${mver}/${JDKALIAS}.pls.${JOS} ]; then
-	echo "Applying extra patches for ${JOS}"
+	echo "Applying extra patches for os ${JOS}"
 	cat ${JPATCHDIR}/${mver}/${JDKALIAS}.pls.${JOS} | while read patcharg patchfile
+	do
+	    ${GPATCH} ${patcharg/+/ } -i ${JPATCHDIR}/${mver}/${patchfile}
+	done
+    fi
+    if [ -f ${JPATCHDIR}/${mver}/${JDKALIAS}.pls.${JFEATURE} ]; then
+	echo "Applying extra patches for feature ${JFEATURE}"
+	cat ${JPATCHDIR}/${mver}/${JDKALIAS}.pls.${JFEATURE} | while read patcharg patchfile
 	do
 	    ${GPATCH} ${patcharg/+/ } -i ${JPATCHDIR}/${mver}/${patchfile}
 	done

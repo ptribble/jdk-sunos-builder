@@ -48,3 +48,21 @@ You can use the -e flag for this
 
 will generate a tarball called jdk-jdk-16-24.tar.gz that will unpack into a
 directory jdk-jdk-16-24, and will tell you where it's put it.
+
+## Patch options
+
+There are flags to control what patches get applied.
+
+The -c flag allows you to specify which cpu patches will be applied. By
+default, it uses the cpu architecture of the system you're running the
+script on. Possible values: sparc
+
+The -o flag allows you to specify which operating system patches will
+be applied. By default, it applies patches appropriate for the system
+you're running the script on. Possible values: solaris
+
+These flags are designed to allow development and testing of patches.
+In general, overriding the cpu or os will cause the build to fail.
+
+The -f flag allows you to apply patches for a specific feature. This
+is for any features that might be disabled by default.
