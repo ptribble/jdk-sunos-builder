@@ -86,7 +86,12 @@ SED="/usr/bin/sed"
 # -P [patch, remove existing copy first]
 # -b [build]
 # -B [build, remove existing copy first]
+# -t [enable tests]
+# -c cpu [override cpu (sparc or x86)]
+# -o os [override os (illumos or Solaris)]
+# -f feature [enable given patch feature]
 # -i [install]
+# -e [export]
 #
 # previous steps will be executed if necessary, but the expected workflow
 # is to first download, then repeat the patch step until clean, then run
