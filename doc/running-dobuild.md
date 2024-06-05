@@ -24,6 +24,12 @@ In practice, what you'll want to do in development is use -p to check
 if any new patches apply cleanly, repeat with -P as you develop changes
 to the patches, then once you're happy do the build step.
 
+## Customizing the build
+
+You can use the -C flag to pass additional flags to configure, for example
+
+    -C --enable-jvm-feature-management
+
 ## Using a build to compile another
 
 One part of the process is that you eventually need to use one version of
