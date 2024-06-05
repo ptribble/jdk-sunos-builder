@@ -273,11 +273,11 @@ initialize_test() {
     #
     JTVER=7.3.1.0
     if [ ! -d jtreg ]; then
-	wget -O ${JCACHEDIR}/TRIBjtreg.${JTVER}.zap https://pkgs.tribblix.org/tribblix-m33/TRIBjtreg.${JTVER}.zap
+	wget -O "${JCACHEDIR}/TRIBjtreg.${JTVER}.zap" https://pkgs.tribblix.org/tribblix-m33/TRIBjtreg.${JTVER}.zap
 	if [ ! -f "${JCACHEDIR}/TRIBjtreg.${JTVER}.zap" ]; then
 	    bail "Unable to download jtreg"
 	fi
-	unzip ${JCACHEDIR}/TRIBjtreg.${JTVER}.zap
+	unzip "${JCACHEDIR}/TRIBjtreg.${JTVER}.zap"
 	if [ ! -d TRIBjtreg/reloc/usr/versions/jtreg ]; then
 	    bail "Unpack of jtreg failed"
 	fi
@@ -323,7 +323,7 @@ major_java_version() {
 	    jver=INVALID
 	    ;;
 	esac
-    echo $jver
+    echo "$jver"
 }
 
 #
@@ -334,13 +334,13 @@ major_java_version() {
 #
 find_tarball() {
     JDKVER="$1"
-    if [ -f ${JCACHEDIR}/${JDKVER}.tar.bz2 ]; then
+    if [ -f "${JCACHEDIR}/${JDKVER}.tar.bz2" ]; then
 	echo "${JCACHEDIR}/${JDKVER}.tar.bz2"
-    elif [ -f ${JCACHEDIR2}/${JDKVER}.tar.bz2 ]; then
+    elif [ -f "${JCACHEDIR2}/${JDKVER}.tar.bz2" ]; then
 	echo "${JCACHEDIR2}/${JDKVER}.tar.bz2"
-    elif [ -f ${JCACHEDIR}/${JDKVER}.tar.gz ]; then
+    elif [ -f "${JCACHEDIR}/${JDKVER}.tar.gz" ]; then
 	echo "${JCACHEDIR}/${JDKVER}.tar.gz"
-    elif [ -f ${JCACHEDIR2}/${JDKVER}.tar.gz ]; then
+    elif [ -f "${JCACHEDIR2}/${JDKVER}.tar.gz" ]; then
 	echo "${JCACHEDIR2}/${JDKVER}.tar.gz"
     fi
 }
@@ -372,7 +372,7 @@ do_download() {
     esac
     jurl="https://github.com/openjdk/${jver}/archive/refs/tags/${jdl}.tar.gz"
     echo "Download: wget -O ${JCACHEDIR}/${JDKVER}.tar.gz $jurl"
-    wget -O ${JCACHEDIR}/${JDKVER}.tar.gz $jurl
+    wget -O "${JCACHEDIR}/${JDKVER}.tar.gz" "$jurl"
 }
 
 #
@@ -383,33 +383,33 @@ do_download() {
 #
 do_unpack() {
     JDKVER="$1"
-    mver=$(major_java_version $JDKVER)
+    mver=$(major_java_version "$JDKVER")
     tball="$2"
-    $TAR xf $tball
-    cd $JDKVER || bail "unpack failed"
-    cat ${JPATCHDIR}/${mver}/${JDKALIAS}.pls | while read patcharg patchfile
+    $TAR xf "$tball"
+    cd "$JDKVER" || bail "unpack failed"
+    cat "${JPATCHDIR}/${mver}/${JDKALIAS}.pls" | while read patcharg patchfile
     do
-	${GPATCH} ${patcharg/+/ } -i ${JPATCHDIR}/${mver}/${patchfile}
+	${GPATCH} ${patcharg/+/ } -i "${JPATCHDIR}/${mver}/${patchfile}"
     done
-    if [ -f ${JPATCHDIR}/${mver}/${JDKALIAS}.pls.${JARCH} ]; then
+    if [ -f "${JPATCHDIR}/${mver}/${JDKALIAS}.pls.${JARCH}" ]; then
 	echo "Applying extra patches for cpu ${JARCH}"
-	cat ${JPATCHDIR}/${mver}/${JDKALIAS}.pls.${JARCH} | while read patcharg patchfile
+	cat "${JPATCHDIR}/${mver}/${JDKALIAS}.pls.${JARCH}" | while read patcharg patchfile
 	do
-	    ${GPATCH} ${patcharg/+/ } -i ${JPATCHDIR}/${mver}/${patchfile}
+	    ${GPATCH} ${patcharg/+/ } -i "${JPATCHDIR}/${mver}/${patchfile}"
 	done
     fi
-    if [ -f ${JPATCHDIR}/${mver}/${JDKALIAS}.pls.${JOS} ]; then
+    if [ -f "${JPATCHDIR}/${mver}/${JDKALIAS}.pls.${JOS}" ]; then
 	echo "Applying extra patches for os ${JOS}"
-	cat ${JPATCHDIR}/${mver}/${JDKALIAS}.pls.${JOS} | while read patcharg patchfile
+	cat "${JPATCHDIR}/${mver}/${JDKALIAS}.pls.${JOS}" | while read patcharg patchfile
 	do
-	    ${GPATCH} ${patcharg/+/ } -i ${JPATCHDIR}/${mver}/${patchfile}
+	    ${GPATCH} ${patcharg/+/ } -i "${JPATCHDIR}/${mver}/${patchfile}"
 	done
     fi
-    if [ -f ${JPATCHDIR}/${mver}/${JDKALIAS}.pls.${JFEATURE} ]; then
+    if [ -f "${JPATCHDIR}/${mver}/${JDKALIAS}.pls.${JFEATURE}" ]; then
 	echo "Applying extra patches for feature ${JFEATURE}"
-	cat ${JPATCHDIR}/${mver}/${JDKALIAS}.pls.${JFEATURE} | while read patcharg patchfile
+	cat "${JPATCHDIR}/${mver}/${JDKALIAS}.pls.${JFEATURE}" | while read patcharg patchfile
 	do
-	    ${GPATCH} ${patcharg/+/ } -i ${JPATCHDIR}/${mver}/${patchfile}
+	    ${GPATCH} ${patcharg/+/ } -i "${JPATCHDIR}/${mver}/${patchfile}"
 	done
     fi
 }
@@ -459,9 +459,9 @@ find_boot_jdk() {
 	# we found it; rewrite the build script
 	# need to used gsed for Solaris
 	#
-	${SED} -i s:${cboot_jdk}:${boot_jdk}: ${sfile}
+	${SED} -i s:${cboot_jdk}:${boot_jdk}: "${sfile}"
     fi
-    echo ${boot_jdk}
+    echo "${boot_jdk}"
 }
 
 #
@@ -495,7 +495,7 @@ enable_gtest() {
     # (if there isn't, we fail in find_boot_jdk, so no need to check here)
     # need to used gsed for Solaris
     #
-    ${SED} -i "s:--with-boot-jdk:--with-gtest=${TESTROOT}/googletest-${gver} --with-boot-jdk:" ${sfile}
+    ${SED} -i "s:--with-boot-jdk:--with-gtest=${TESTROOT}/googletest-${gver} --with-boot-jdk:" "${sfile}"
 }
 
 #
@@ -516,7 +516,7 @@ do_install() {
 	    # there's no easy way to do this
 	    # my builds might appear as openjdkXX or jdkXX
 	    # Liberica is eg jdk-11.0.18
-	    NVER=$(basename ${JDKVER})
+	    NVER=$(basename "${JDKVER}")
 	    case $NVER in
 		jdk11*|openjdk11*|jdk-11*|openjdk-11*)
 		    mver=jdk11
@@ -562,19 +562,19 @@ do_install() {
 		    ;;
 	    esac
 	    # looks like a successful build
-	    rm -f ${JINSTANCES}/${mver}
+	    rm -f "${JINSTANCES}/${mver}"
 	    if [ ! -d "${JINSTANCES}" ]; then
-		mkdir -p ${JINSTANCES}
+		mkdir -p "${JINSTANCES}"
 	    fi
 	    if [ ! -d "${JINSTANCES}" ]; then
 		bail "unable to create $JINSTANCES"
 	    fi
-	    ln -s ${JDKVER} ${JINSTANCES}/${mver}
+	    ln -s "${JDKVER}" "${JINSTANCES}/${mver}"
 	    echo "Successfully installed:"
 	    ${JINSTANCES}/${mver}/bin/java -version
 	    ;;
 	*)
-	    mver=$(major_java_version $JDKVER)
+	    mver=$(major_java_version "$JDKVER")
 	    if [ ! -d "${JBUILD}/${JDKVER}" ]; then
 		bail "no built tag $JDKVER"
 	    fi
@@ -586,14 +586,14 @@ do_install() {
 		bail "unable to find java in build area"
 	    fi
 	    # looks like a successful build
-	    rm -f ${JINSTANCES}/${mver}
+	    rm -f "${JINSTANCES}/${mver}"
 	    if [ ! -d "${JINSTANCES}" ]; then
-		mkdir -p ${JINSTANCES}
+		mkdir -p "${JINSTANCES}"
 	    fi
 	    if [ ! -d "${JINSTANCES}" ]; then
 		bail "unable to create $JINSTANCES"
 	    fi
-	    ln -s ${NJDIR} ${JINSTANCES}/${mver}
+	    ln -s "${NJDIR}" "${JINSTANCES}/${mver}"
 	    echo "Successfully installed:"
 	    ${JINSTANCES}/${mver}/bin/java -version
 	    ;;
@@ -611,7 +611,7 @@ do_export() {
     if [ ! -d "${JEXPORTDIR}" ]; then
 	bail "Unable to create ${JEXPORTDIR} to store images"
     fi
-    mver=$(major_java_version $JDKVER)
+    mver=$(major_java_version "$JDKVER")
     if [ ! -d "${JBUILD}/${JDKVER}" ]; then
 	bail "no built tag $JDKVER"
     fi
@@ -627,26 +627,26 @@ do_export() {
     # tarball that unpacks into a versioned directory
     # so create a staging area
     TDIR=/tmp/jdk-exporter.$$
-    rm -fr $TDIR
-    mkdir $TDIR
+    rm -fr "$TDIR"
+    mkdir "$TDIR"
     if [ ! -d "${TDIR}" ]; then
 	bail "unable to create staging area"
     fi
     # now we can copy things across
     echo "Creating tarball"
     cd ${JBUILD}/${JDKVER}/build/*/images
-    tar cf - jdk | ( cd $TDIR ; tar xf -)
-    cd $TDIR
-    mv jdk $JDKVER
-    tar cf - $JDKVER | gzip > ${JEXPORTDIR}/${JDKVER}.tar.gz
-    ls -l ${JEXPORTDIR}/${JDKVER}.tar.gz
+    tar cf - jdk | ( cd "$TDIR" ; tar xf -)
+    cd "$TDIR"
+    mv jdk "$JDKVER"
+    tar cf - "$JDKVER" | gzip > "${JEXPORTDIR}/${JDKVER}.tar.gz"
+    ls -l "${JEXPORTDIR}/${JDKVER}.tar.gz"
 }
 
 #
 # catch the install early
 #
 if [ -n "${DOINSTALL}" ]; then
-    do_install $JDKVER
+    do_install "$JDKVER"
     exit 0
 fi
 
@@ -654,7 +654,7 @@ fi
 # catch the export early
 #
 if [ -n "${DOEXPORT}" ]; then
-    do_export $JDKVER
+    do_export "$JDKVER"
     exit 0
 fi
 
@@ -662,9 +662,9 @@ fi
 # sanity check/debug
 #
 if [ ! -d "${JCACHEDIR}" ]; then
-    mkdir -p $JCACHEDIR
+    mkdir -p "$JCACHEDIR"
     if [ ! -d "${JCACHEDIR}" ]; then
-    bail "Unable to create ${JCACHEDIR} to store tarballs"
+	bail "Unable to create ${JCACHEDIR} to store tarballs"
     fi
 fi
 if [ ! -d "${JPATCHDIR}" ]; then
@@ -686,26 +686,26 @@ fi
 #
 JDKALIAS=${JDKVER}
 
-mver=$(major_java_version $JDKVER)
-if [ -f ${JPATCHDIR}/${mver}/${JDKVER}.alias ]; then
+mver=$(major_java_version "$JDKVER")
+if [ -f "${JPATCHDIR}/${mver}/${JDKVER}.alias" ]; then
     JDKALIAS=$(<${JPATCHDIR}/${mver}/${JDKVER}.alias)
     echo "Found alias $JDKALIAS for $JDKVER"
 fi
-tball=$(find_tarball $JDKVER)
+tball=$(find_tarball "$JDKVER")
 if [ -s "${tball}" ]; then 
     echo "Found existing download ${tball}"
 fi
-if [ -f ${JPATCHDIR}/${mver}/${JDKALIAS}.pls ]; then
+if [ -f "${JPATCHDIR}/${mver}/${JDKALIAS}.pls" ]; then
     echo "Found patch list for $JDKVER"
 else
     bail "No patch list for $JDKVER"
 fi
-if [ -d ${JPATCHDIR}/${mver}/${JDKALIAS} ]; then
+if [ -d "${JPATCHDIR}/${mver}/${JDKALIAS}" ]; then
     echo "Found patch directory for $JDKVER"
 else
     bail "No patch directory for $JDKVER"
 fi
-if [ -f ${JPATCHDIR}/${mver}/${JDKALIAS}/build.sh ]; then
+if [ -f "${JPATCHDIR}/${mver}/${JDKALIAS}/build.sh" ]; then
     echo "Found build script for $JDKVER"
 else
     bail "No build script for $JDKVER"
@@ -725,8 +725,8 @@ fi
 if [ -s "${tball}" ]; then
     echo "Already downloaded $tball"
 else
-    do_download $JDKVER
-    tball=$(find_tarball $JDKVER)
+    do_download "$JDKVER"
+    tball=$(find_tarball "$JDKVER")
 fi
 if [ ! -s "${tball}" ]; then
     bail "no download found"
@@ -747,24 +747,24 @@ fi
 # with -P and -B we clean up an existing copy
 #
 if [ -n "${DOCLEAN}" ]; then
-    if [ -d ${JBUILD}/${JDKVER} ]; then
+    if [ -d "${JBUILD}/${JDKVER}" ]; then
 	echo "Removing existing unpacked ${JDKVER}"
-	rm -fr ${JBUILD}/${JDKVER}
+	rm -fr "${JBUILD}/${JDKVER}"
     fi
 fi
-if [ -d ${JBUILD}/${JDKVER} ]; then
+if [ -d "${JBUILD}/${JDKVER}" ]; then
     echo "Found existing unpacked ${JDKVER}"
 else
-    if [ ! -d ${JBUILD} ]; then
+    if [ ! -d "${JBUILD}" ]; then
 	mkdir -p "${JBUILD}"
     fi
-    if [ ! -d ${JBUILD} ]; then
+    if [ ! -d "${JBUILD}" ]; then
 	bail "cannot create build area $JBUILD"
     fi
-    cd $JBUILD || bail "cannot cd to build area $JBUILD"
-    do_unpack $JDKVER $tball
+    cd "$JBUILD" || bail "cannot cd to build area $JBUILD"
+    do_unpack "$JDKVER" "$tball"
 fi
-if [ ! -d ${JBUILD}/${JDKVER} ]; then
+if [ ! -d "${JBUILD}/${JDKVER}" ]; then
     bail "Unpack of $JDKVER failed"
 fi
 if [ -n "${DOPATCH}" ]; then
@@ -775,7 +775,7 @@ fi
 # phase 3 is to run a build
 # we know the location exists from above
 #
-cd ${JBUILD}/${JDKVER} || bail "cannot cd to build directory $JBUILD/$JDKVER"
+cd "${JBUILD}/${JDKVER}" || bail "cannot cd to build directory $JBUILD/$JDKVER"
 NJDIR=$(echo build/*/images/jdk)
 if [ -x "${NJDIR}/bin/java" ]; then
     echo "Build already ran successfully"
@@ -790,27 +790,27 @@ else
 	#
 	# but gtest involves rewriting the configure command
 	#
-	enable_gtest ${mver} ${JPATCHDIR}/${mver}/${JDKALIAS}/build.sh
+	enable_gtest "${mver}" "${JPATCHDIR}/${mver}/${JDKALIAS}/build.sh"
 	#
 	# put in a little marker to say we've actually done this
 	#
 	touch .jdk_sunos_test_enabled
     fi
-    find_boot_jdk ${JPATCHDIR}/${mver}/${JDKALIAS}/build.sh
+    find_boot_jdk "${JPATCHDIR}/${mver}/${JDKALIAS}/build.sh"
     echo "Running ${JPATCHDIR}/${mver}/${JDKALIAS}/build.sh"
     ${JPATCHDIR}/${mver}/${JDKALIAS}/build.sh
     #
     # if we rewrote the build script, restore it
     # old Solaris git doesn't understand restore, do it the old way
     #
-    cd ${JPATCHDIR}
-    git checkout -- ${mver}/${JDKALIAS}/build.sh
+    cd "${JPATCHDIR}" || bail "unable to cd back to patch repo"
+    git checkout -- "${mver}/${JDKALIAS}/build.sh"
 fi
 
 #
 # was the build successful?
 #
-cd ${JBUILD}/${JDKVER} || bail "cannot cd to build directory $JBUILD/$JDKVER"
+cd "${JBUILD}/${JDKVER}" || bail "cannot cd to build directory $JBUILD/$JDKVER"
 NJDIR=$(echo build/*/images/jdk)
 if [ -x "${NJDIR}/bin/java" ]; then
     echo "Build of ${JDKVER} completed successfully"
@@ -835,7 +835,7 @@ fi
 #
 # run the tests
 #
-cd ${JBUILD}/${JDKVER} || bail "cannot cd to build directory $JBUILD/$JDKVER"
+cd "${JBUILD}/${JDKVER}" || bail "cannot cd to build directory $JBUILD/$JDKVER"
 #
 # the tests need to be configured at build time, first check
 # if they were
