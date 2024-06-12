@@ -22,6 +22,11 @@
 # it will attempt to download, patch, and build any jdk tag, and do so for
 # SPARC and x86, and for illumos and Solaris 11.4
 #
+# will also function on SPARC/Linux (specifically debian-sparc) to
+# validate the SPARC port on a regularly supported OS, although this
+# script need to be called explicitly via bash, as the default sh of
+# dash won't work
+#
 # it is dependent on the "jdk-sunos-patches" repository, which holds
 # all the patches for each tag
 #
@@ -110,7 +115,7 @@ JEXTRACONF=""
 # variables
 #
 # JARCH - sparc or i386
-# JOS - Solaris or illumos
+# JOS - Solaris or illumos or GNU/Linux
 #
 # there are additional patches applied dependent on these
 #
@@ -122,6 +127,22 @@ case $(uname -o) in
     Solaris)
 	JOS="solaris"
 	SED="/usr/gnu/bin/sed"
+	;;
+    GNU/Linux)
+	JOS="linux"
+	TAR="/usr/bin/tar"
+	SED="/usr/bin/sed"
+	GPATCH="/usr/bin/patch"
+	JARCH=$(uname -m)
+	case $JARCH in
+	    sparc64)
+		JARCH="sparc"
+		;;
+	    *)
+		echo "Linux only supported on sparc64"
+		exit 1
+		;;
+	esac
 	;;
     *)
 	echo "Unknown OS, unable to continue"

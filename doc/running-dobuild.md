@@ -72,3 +72,11 @@ In general, overriding the cpu or os will cause the build to fail.
 
 The -f flag allows you to apply patches for a specific feature. This
 is for any features that might be disabled by default.
+
+## Linux support
+
+There is some support here for running under Linux, specifically Debian
+SPARC. A caveat here is that /bin/sh is dash there, so you'll have to
+explicitly use bash:
+
+    bash dobuild ...
