@@ -545,6 +545,25 @@ enable_configure_flags() {
 }
 
 #
+# any other modifications to the build script
+#
+fixup_build_script() {
+    sfile="$1"
+    if [ ! -f "${sfile}" ]; then
+	echo "ERROR: missing build script $sfile"
+	exit 1
+    fi
+    #
+    # need to used gsed for Solaris
+    #
+    # on Solaris, gstrip has the g-prefixed name even in /usr/gnu
+    #
+    if [ -x /usr/gnu/bin/gstrip ]; then
+	${SED} -i "s:/usr/gnu/bin/strip:/usr/gnu/bin/gstrip:" "${sfile}"
+    fi
+}
+
+#
 # install a copy of the jdk into the alternate area
 #
 # the argument can be either a tag, like a normal build, or
@@ -846,6 +865,7 @@ else
 	enable_configure_flags "${JPATCHDIR}/${mver}/${JDKALIAS}/build.sh" "${JEXTRACONF}"
     fi
     find_boot_jdk "${JPATCHDIR}/${mver}/${JDKALIAS}/build.sh"
+    fixup_build_script "${JPATCHDIR}/${mver}/${JDKALIAS}/build.sh"
     echo "Running ${JPATCHDIR}/${mver}/${JDKALIAS}/build.sh"
     ${JPATCHDIR}/${mver}/${JDKALIAS}/build.sh
     #
