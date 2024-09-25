@@ -300,7 +300,7 @@ initialize_test() {
     # this won't work for jdk8, as the current jtreg needs to use jdk11
     # or later
     #
-    JTVER=7.3.1.0
+    JTVER=7.4.0
     if [ ! -d jtreg ]; then
 	wget -O "${JCACHEDIR}/TRIBjtreg.${JTVER}.zap" https://pkgs.tribblix.org/tribblix-m35/TRIBjtreg.${JTVER}.zap
 	if [ ! -f "${JCACHEDIR}/TRIBjtreg.${JTVER}.zap" ]; then
