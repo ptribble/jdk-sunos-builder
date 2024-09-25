@@ -1,5 +1,7 @@
 #!/bin/sh
 #
+# SPDX-License-Identifier: CDDL-1.0
+#
 # {{{ CDDL HEADER
 #
 # This file and its contents are supplied under the terms of the
@@ -300,7 +302,7 @@ initialize_test() {
     #
     JTVER=7.3.1.0
     if [ ! -d jtreg ]; then
-	wget -O "${JCACHEDIR}/TRIBjtreg.${JTVER}.zap" https://pkgs.tribblix.org/tribblix-m33/TRIBjtreg.${JTVER}.zap
+	wget -O "${JCACHEDIR}/TRIBjtreg.${JTVER}.zap" https://pkgs.tribblix.org/tribblix-m35/TRIBjtreg.${JTVER}.zap
 	if [ ! -f "${JCACHEDIR}/TRIBjtreg.${JTVER}.zap" ]; then
 	    bail "Unable to download jtreg"
 	fi
