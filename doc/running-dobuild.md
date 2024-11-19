@@ -30,6 +30,15 @@ You can use the -C flag to pass additional flags to configure, for example
 
     -C --enable-jvm-feature-management
 
+You can use the -T flag to specify the type of build, for example
+
+    -T fastdebug
+
+The available types are release, fastdebug, slowdebug, optimized. The default
+is to perform a release build. Apart from enabling some debug flags, the
+build type also determines the name of the directory (under build) where the
+built jdk will be found.
+
 ## Using a build to compile another
 
 One part of the process is that you eventually need to use one version of

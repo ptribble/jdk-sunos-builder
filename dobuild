@@ -94,6 +94,7 @@ SED="/usr/bin/sed"
 # -b [build]
 # -B [build, remove existing copy first]
 # -t [enable tests]
+# -T type [build type - release, fastdebug, slowdebug, optimized]
 # -C flags [extra flags to pass to configure]
 # -c cpu [override cpu (sparc or x86)]
 # -o os [override os (illumos or Solaris)]
@@ -112,6 +113,8 @@ DOINSTALL=""
 DOCLEAN=""
 JFEATURE=""
 JEXTRACONF=""
+JTYPECONF=""
+JBUILDTYPE=""
 
 #
 # variables
@@ -155,7 +158,7 @@ esac
 dohelp() {
     cat <<EOF
 
-Usage: $0 [-t] [-b | -B | -c cpu | -C conf_flags | -d | -f feature | -h | -o os | -p | -P] jdk-version
+Usage: $0 [-t] [-T build_type] [-b | -B | -c cpu | -C conf_flags | -d | -f feature | -h | -o os | -p | -P] jdk-version
        $0 -i jdk-version|/path/to/jdk
        $0 -e jdk-version
 
@@ -170,6 +173,7 @@ Flags:
 -b  build, unpack, patch, and download if necessary
 -B  like -b, remove existing copy and start over
 -t  enable and run tests
+-T type build type, release (default), fastdebug, slowdebug, optimized
 -c cpu  override cpu (sparc or x86)
 -o os  override os (illumos or Solaris)
 -C flags  extra flags to pass to configure
@@ -184,7 +188,7 @@ exit 1
 #
 # parse any arguments
 #
-while getopts "bBdhpPtieC:c:o:f:" opt; do
+while getopts "bBdhpPtT:ieC:c:o:f:" opt; do
     case $opt in
 	b)
 	    DOBUILD="yes"
@@ -209,6 +213,9 @@ while getopts "bBdhpPtieC:c:o:f:" opt; do
 	t)
 	    DOTEST="yes"
 	    ;;
+	T)
+	    JBUILDTYPE="$OPTARG"
+	    ;;
 	i)
 	    DOINSTALL="yes"
 	    ;;
@@ -228,7 +235,7 @@ while getopts "bBdhpPtieC:c:o:f:" opt; do
 	    JFEATURE="$OPTARG"
 	    ;;
 	*)
-	    echo "ERROR: invalid option $OPTARG"
+	    echo "ERROR: invalid option $opt"
             exit 1
             ;;
     esac
@@ -748,6 +755,16 @@ fi
 if [ ! -d "${JPATCHDIR}" ]; then
     bail "No patch directory, have you checked out jdk-sunos-patches?"
 fi
+if [ -n "${JBUILDTYPE}" ]; then
+    case ${JBUILDTYPE} in
+	release|fastdebug|slowdebug|optimized)
+	    JTYPECONF="--with-debug-level=${JBUILDTYPE}"
+	    ;;
+	*)
+	    bail "Invalid debug level for -T"
+	    ;;
+    esac
+fi
 
 #
 # if testing, we need to make sure the test components are downloaded
@@ -876,6 +893,9 @@ else
     fi
     if [ -n "${JEXTRACONF}" ]; then
 	enable_configure_flags "${JPATCHDIR}/${mver}/${JDKALIAS}/build.sh" "${JEXTRACONF}"
+    fi
+    if [ -n "${JTYPECONF}" ]; then
+	enable_configure_flags "${JPATCHDIR}/${mver}/${JDKALIAS}/build.sh" "${JTYPECONF}"
     fi
     find_boot_jdk "${JPATCHDIR}/${mver}/${JDKALIAS}/build.sh"
     fixup_build_script "${JPATCHDIR}/${mver}/${JDKALIAS}/build.sh"
