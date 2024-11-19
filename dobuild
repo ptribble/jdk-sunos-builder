@@ -519,6 +519,17 @@ enable_gtest() {
 	    ;;
     esac
     #
+    # some versions encode the requirement, so use that if we can
+    #
+    if [ -f make/autoconf/lib-tests.m4 ]; then
+	ngver=$(grep GTEST_MINIMUM_VERSION= make/autoconf/lib-tests.m4|awk -F= '{print $2}')
+	if [ -d "${TESTROOT}/googletest-${ngver}" ]; then
+	    gver="${ngver}"
+	else
+	    bail "This jdk version requires gtest ${ngver}"
+	fi
+    fi
+    #
     # rewrite the build script
     # there should be a --with-boot-jdk piece, expand that
     # (if there isn't, we fail in find_boot_jdk, so no need to check here)
