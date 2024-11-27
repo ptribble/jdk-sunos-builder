@@ -530,10 +530,12 @@ enable_gtest() {
     #
     if [ -f make/autoconf/lib-tests.m4 ]; then
 	ngver=$(grep GTEST_MINIMUM_VERSION= make/autoconf/lib-tests.m4|awk -F= '{print $2}')
-	if [ -d "${TESTROOT}/googletest-${ngver}" ]; then
-	    gver="${ngver}"
-	else
-	    bail "This jdk version requires gtest ${ngver}"
+	if [ -n "${ngver}" ]; then
+	    if [ -d "${TESTROOT}/googletest-${ngver}" ]; then
+		gver="${ngver}"
+	    else
+		bail "This jdk version requires gtest ${ngver}"
+	    fi
 	fi
     fi
     #
