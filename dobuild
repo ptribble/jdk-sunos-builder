@@ -501,9 +501,33 @@ find_boot_jdk() {
 }
 
 #
-# enable gtest at configure time
+# enable gtest on older releases, where it's normally disabled
+# because it's tied to Studio on Solaris
 #
-enable_gtest() {
+enable_gtest_old() {
+    jmver="$1"
+    sfile="$2"
+    if [ ! -f "${sfile}" ]; then
+	echo "ERROR: missing build script $sfile"
+	exit 1
+    fi
+    #
+    # rewrite the build script to remove the --disable-hotspot-gtest
+    # piece, which is normally on a line with --disable-dtrace
+    # need to used gsed for Solaris
+    #
+    ${SED} -i "s:--disable-hotspot-gtest::" "${sfile}"
+    #
+    # we also need to fix the make so it doesn't run half a Studio
+    # build and complain about missing stlport
+    #
+    ${SED} -i '/stlport4/d' make/hotspot/lib/CompileGtest.gmk
+}
+
+#
+# enable gtest at configure time on newer releases where it's external
+#
+enable_gtest_new() {
     jmver="$1"
     sfile="$2"
     if [ ! -f "${sfile}" ]; then
@@ -545,6 +569,39 @@ enable_gtest() {
     # need to used gsed for Solaris
     #
     ${SED} -i "s:--with-boot-jdk:--with-gtest=${TESTROOT}/googletest-${gver} --with-boot-jdk:" "${sfile}"
+}
+
+#
+# enable gtest, selecting the appropriate method to do so depending on
+# which release we're configuring
+#
+enable_gtest() {
+    jmver="$1"
+    sfile="$2"
+    if [ ! -f "${sfile}" ]; then
+	echo "ERROR: missing build script $sfile"
+	exit 1
+    fi
+    #
+    # different versions of the jdk need different customization techniques
+    # it switched at the time of removal, so need to check jdk15 dynamically
+    #
+    case $jmver in
+	jdk8|jdk9|jdk10|jdk11|jdk12|jdk13|jdk14)
+	    enable_gtest_old "$jmver" "$sfile"
+	    ;;
+	jdk15)
+	    checkstring=$(grep disable-hotspot-gtest "${sfile}")
+	    if [ -n "${checkstring}" ]; then
+		enable_gtest_old "$jmver" "$sfile"
+	    else
+		enable_gtest_new "$jmver" "$sfile"
+	    fi
+	    ;;
+	*)
+	    enable_gtest_new "$jmver" "$sfile"
+	    ;;
+    esac
 }
 
 #
