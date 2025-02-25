@@ -9,7 +9,8 @@ m34), and Solaris 11 binary builds are available for
 [SPARC](https://pkgs.tribblix.org/openjdk/sparc-solaris/)
 up to jdk17, and
 [Intel](https://pkgs.tribblix.org/openjdk/intel-solaris/)
-up to jdk21.
+up to jdk21. (Those are the latest LTS releases available; later development
+builds may also be available.)
 
 It is dependent on the
 [jdk-sunos-patches](https://github.com/ptribble/jdk-sunos-patches)
@@ -74,14 +75,9 @@ You'll also need to install some software in order for the builds to work.
 
 ### Tribblix
 
-Install the following overlays:
+Install the following overlay:
 
     zap install-overlay openjdk-build
-    zap install-overlay java8
-    zap install-overlay java11
-    zap install-overlay java17
-    zap install openjdk12 openjdk13 openjdk14 openjdk15 openjdk16
-    zap install openjdk18 openjdk19 openjdk20 openjdk21
 
 ### Solaris
 
