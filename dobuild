@@ -426,27 +426,27 @@ do_unpack() {
     tball="$2"
     $TAR xf "$tball"
     cd "$JDKVER" || bail "unpack failed"
-    cat "${JPATCHDIR}/${mver}/${JDKALIAS}.pls" | while read patcharg patchfile
+    cat "${JPATCHDIR}/${mver}/${JDKALIAS}.pls" | while read -r patcharg patchfile
     do
 	${GPATCH} ${patcharg/+/ } -i "${JPATCHDIR}/${mver}/${patchfile}"
     done
     if [ -f "${JPATCHDIR}/${mver}/${JDKALIAS}.pls.${JARCH}" ]; then
 	echo "Applying extra patches for cpu ${JARCH}"
-	cat "${JPATCHDIR}/${mver}/${JDKALIAS}.pls.${JARCH}" | while read patcharg patchfile
+	cat "${JPATCHDIR}/${mver}/${JDKALIAS}.pls.${JARCH}" | while read -r patcharg patchfile
 	do
 	    ${GPATCH} ${patcharg/+/ } -i "${JPATCHDIR}/${mver}/${patchfile}"
 	done
     fi
     if [ -f "${JPATCHDIR}/${mver}/${JDKALIAS}.pls.${JOS}" ]; then
 	echo "Applying extra patches for os ${JOS}"
-	cat "${JPATCHDIR}/${mver}/${JDKALIAS}.pls.${JOS}" | while read patcharg patchfile
+	cat "${JPATCHDIR}/${mver}/${JDKALIAS}.pls.${JOS}" | while read -r patcharg patchfile
 	do
 	    ${GPATCH} ${patcharg/+/ } -i "${JPATCHDIR}/${mver}/${patchfile}"
 	done
     fi
     if [ -f "${JPATCHDIR}/${mver}/${JDKALIAS}.pls.${JFEATURE}" ]; then
 	echo "Applying extra patches for feature ${JFEATURE}"
-	cat "${JPATCHDIR}/${mver}/${JDKALIAS}.pls.${JFEATURE}" | while read patcharg patchfile
+	cat "${JPATCHDIR}/${mver}/${JDKALIAS}.pls.${JFEATURE}" | while read -r patcharg patchfile
 	do
 	    ${GPATCH} ${patcharg/+/ } -i "${JPATCHDIR}/${mver}/${patchfile}"
 	done
@@ -992,7 +992,7 @@ fi
 #
 # if testing isn't requested, also stop
 #
-if [ ! -n "${DOTEST}" ]; then
+if [ -z "${DOTEST}" ]; then
     exit 0
 fi
 
