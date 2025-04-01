@@ -88,19 +88,19 @@ SED="/usr/bin/sed"
 # Usage: dobuild [flags] tag
 #
 # valid flags are:
-# -d [download]
-# -p [patch]
-# -P [patch, remove existing copy first]
 # -b [build]
 # -B [build, remove existing copy first]
-# -t [enable tests]
-# -T type [build type - release, fastdebug, slowdebug, optimized]
-# -C flags [extra flags to pass to configure]
 # -c cpu [override cpu (sparc or x86)]
-# -o os [override os (illumos or Solaris)]
+# -C flags [extra flags to pass to configure]
+# -d [download]
+# -e [export]
 # -f feature [enable given patch feature]
 # -i [install]
-# -e [export]
+# -o os [override os (illumos or Solaris)]
+# -p [patch]
+# -P [patch, remove existing copy first]
+# -t [enable tests]
+# -T type [build type - release, fastdebug, slowdebug, optimized]
 #
 # previous steps will be executed if necessary, but the expected workflow
 # is to first download, then repeat the patch step until clean, then run
@@ -167,19 +167,19 @@ Download, patch, and build a copy of the specified jdk.
 Flags:
 
 -h  show this help
--d  just download
--p  unpack and patch, download if necessary
--P  like -p, remove existing copy and start over
 -b  build, unpack, patch, and download if necessary
 -B  like -b, remove existing copy and start over
--t  enable and run tests
--T type build type, release (default), fastdebug, slowdebug, optimized
 -c cpu  override cpu (sparc or x86)
--o os  override os (illumos or Solaris)
 -C flags  extra flags to pass to configure
+-d  just download
+-e  export the given built jdk to a tarball
 -f feature  enable given patch feature
 -i  link the given jdk into the list of available instances
--e  export the given built jdk to a tarball
+-o os  override os (illumos or Solaris)
+-p  unpack and patch, download if necessary
+-P  like -p, remove existing copy and start over
+-t  enable and run tests
+-T type build type, release (default), fastdebug, slowdebug, optimized
 EOF
 
 exit 1
@@ -188,7 +188,7 @@ exit 1
 #
 # parse any arguments
 #
-while getopts "bBdhpPtT:ieC:c:o:f:" opt; do
+while getopts "bBc:C:def:hio:pPtT:" opt; do
     case $opt in
 	b)
 	    DOBUILD="yes"
@@ -197,11 +197,29 @@ while getopts "bBdhpPtT:ieC:c:o:f:" opt; do
 	    DOBUILD="yes"
 	    DOCLEAN="yes"
 	    ;;
+	c)
+	    JARCH="$OPTARG"
+	    ;;
+	C)
+	    JEXTRACONF="$OPTARG"
+	    ;;
 	d)
 	    DODOWNLOAD="yes"
 	    ;;
+	e)
+	    DOEXPORT="yes"
+	    ;;
+	f)
+	    JFEATURE="$OPTARG"
+	    ;;
 	h)
 	    dohelp
+	    ;;
+	i)
+	    DOINSTALL="yes"
+	    ;;
+	o)
+	    JOS="$OPTARG"
 	    ;;
 	p)
 	    DOPATCH="yes"
@@ -215,24 +233,6 @@ while getopts "bBdhpPtT:ieC:c:o:f:" opt; do
 	    ;;
 	T)
 	    JBUILDTYPE="$OPTARG"
-	    ;;
-	i)
-	    DOINSTALL="yes"
-	    ;;
-	e)
-	    DOEXPORT="yes"
-	    ;;
-	C)
-	    JEXTRACONF="$OPTARG"
-	    ;;
-	c)
-	    JARCH="$OPTARG"
-	    ;;
-	o)
-	    JOS="$OPTARG"
-	    ;;
-	f)
-	    JFEATURE="$OPTARG"
 	    ;;
 	*)
 	    echo "ERROR: invalid option $opt"
