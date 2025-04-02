@@ -42,6 +42,15 @@ built jdk will be found.
 The -z flag will pass the appropriate additional flags to the configure
 script to build the zero (no-assembler) variant.
 
+You can use the -k flag to specify an alternate toolchain. The default (and
+currently only supported) toolchain is gcc. The options here are limited to
+the clang and solstudio toolchains. This flag will only work if there's a
+toolchain-specific patch (ie, a patch file named toolchain-clang.patch or
+toolchain-solstudio.patch for the jdk version you're trying to build). If
+no toolchain-specific patch is found, the build will fail with an error.
+There's no guarantee that building with an alternate toolchain will succeed
+or generate a functional jdk.
+
 ## Using a build to compile another
 
 One part of the process is that you eventually need to use one version of

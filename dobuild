@@ -85,6 +85,14 @@ GPATCH="/usr/bin/gpatch"
 SED="/usr/bin/sed"
 
 #
+# if you want to enable a different toolchain, then this will be set
+# this will also apply an extra toolchain patch, using the fixed name
+#   toolchain-foo.patch
+# and rewrite the build script
+#
+JTOOLCHAIN=""
+
+#
 # Usage: dobuild [flags] tag
 #
 # valid flags are:
@@ -96,6 +104,7 @@ SED="/usr/bin/sed"
 # -e [export]
 # -f feature [enable given patch feature]
 # -i [install]
+# -k toolchain [optionally build with solstudio or clang]
 # -o os [override os (illumos or Solaris)]
 # -p [patch]
 # -P [patch, remove existing copy first]
@@ -177,6 +186,7 @@ Flags:
 -e  export the given built jdk to a tarball
 -f feature  enable given patch feature
 -i  link the given jdk into the list of available instances
+-k toolchain  build with alternate toolchain (eg clang or solstudio)
 -o os  override os (illumos or Solaris)
 -p  unpack and patch, download if necessary
 -P  like -p, remove existing copy and start over
@@ -190,7 +200,7 @@ exit 1
 #
 # parse any arguments
 #
-while getopts "bBc:C:def:hio:pPtT:z" opt; do
+while getopts "bBc:C:def:hik:o:pPtT:z" opt; do
     case $opt in
 	b)
 	    DOBUILD="yes"
@@ -219,6 +229,9 @@ while getopts "bBc:C:def:hio:pPtT:z" opt; do
 	    ;;
 	i)
 	    DOINSTALL="yes"
+	    ;;
+	k)
+	    JTOOLCHAIN="$OPTARG"
 	    ;;
 	o)
 	    JOS="$OPTARG"
@@ -425,6 +438,8 @@ do_download() {
 #
 # if we find per-os or per-architecture or feature patch lists apply those too
 #
+# if asked for an alternate toolchain, apply a fixed-name patch last
+#
 do_unpack() {
     JDKVER="$1"
     mver=$(major_java_version "$JDKVER")
@@ -455,6 +470,9 @@ do_unpack() {
 	do
 	    ${GPATCH} ${patcharg/+/ } -i "${JPATCHDIR}/${mver}/${patchfile}"
 	done
+    fi
+    if [ -f "${JPATCHDIR}/${mver}/${JDKALIAS}/toolchain-${JTOOLCHAIN}.patch" ]; then
+	${GPATCH} -p1 -i "${JPATCHDIR}/${mver}/${JDKALIAS}/toolchain-${JTOOLCHAIN}.patch"
     fi
 }
 
@@ -647,6 +665,15 @@ fixup_build_script() {
     #
     if [ -x /usr/gnu/bin/gstrip ]; then
 	${SED} -i "s:/usr/gnu/bin/strip:/usr/gnu/bin/gstrip:" "${sfile}"
+    fi
+    #
+    # change if we need to use an alternate toolchain
+    # we've already checked the patch is present
+    # there's always a toolchain specified in the build script,
+    # set to gcc
+    #
+    if [ -n "${JTOOLCHAIN}" ]; then
+	${SED} -i "s:--with-toolchain-type=gcc:--with-toolchain-type=${JTOOLCHAIN}:" "${sfile}"
     fi
 }
 
@@ -871,6 +898,18 @@ if [ -f "${JPATCHDIR}/${mver}/${JDKALIAS}/build.sh" ]; then
     echo "Found build script for $JDKVER"
 else
     bail "No build script for $JDKVER"
+fi
+
+#
+# if asked for an alternate toolchain, check that there is a patch to support
+# that toolchain
+#
+if [ -n "${JTOOLCHAIN}" ]; then
+    if [ -f "${JPATCHDIR}/${mver}/${JDKALIAS}/toolchain-${JTOOLCHAIN}.patch" ]; then
+	echo "Found toolchain patch to support ${JTOOLCHAIN}"
+    else
+	bail "No toolchain patch for ${JTOOLCHAIN}"
+    fi
 fi
 
 #
