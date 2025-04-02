@@ -39,6 +39,9 @@ is to perform a release build. Apart from enabling some debug flags, the
 build type also determines the name of the directory (under build) where the
 built jdk will be found.
 
+The -z flag will pass the appropriate additional flags to the configure
+script to build the zero (no-assembler) variant.
+
 ## Using a build to compile another
 
 One part of the process is that you eventually need to use one version of
