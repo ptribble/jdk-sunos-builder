@@ -674,6 +674,15 @@ fixup_build_script() {
     #
     if [ -n "${JTOOLCHAIN}" ]; then
 	${SED} -i "s:--with-toolchain-type=gcc:--with-toolchain-type=${JTOOLCHAIN}:" "${sfile}"
+	#
+	# in general, studio builds fail on the native jtreg components
+	# needed for test-images, so just build product-images
+	#
+	case ${JTOOLCHAIN} in
+	    solstudio)
+		${SED} -i "s:gmake all:gmake product-images:" "${sfile}"
+		;;
+	esac
     fi
 }
 
