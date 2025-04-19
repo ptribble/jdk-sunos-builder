@@ -192,6 +192,7 @@ Flags:
 -P  like -p, remove existing copy and start over
 -t  enable and run tests
 -T type build type, release (default), fastdebug, slowdebug, optimized
+-z  build the zero variant
 EOF
 
 exit 1
