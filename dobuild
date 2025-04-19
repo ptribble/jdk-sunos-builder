@@ -687,6 +687,32 @@ fixup_build_script() {
 }
 
 #
+# save details of some of the options used to create this build
+# this allows easy understanding of how this build was configured,
+# and also allows construction of sensible exported filenames
+#
+save_build_metadata() {
+    if [ -n "${JZERO}" ]; then
+	if [ ! -f .jdk_sunos_variant ]; then
+	    touch .jdk_sunos_variant
+	fi
+	echo "zero" >> .jdk_sunos_variant
+    fi
+    if [ -n "${JTOOLCHAIN}" ]; then
+	if [ ! -f .jdk_sunos_variant ]; then
+	    touch .jdk_sunos_variant
+	fi
+	echo "${JTOOLCHAIN}" >> .jdk_sunos_variant
+    fi
+    if [ -n "${JBUILDTYPE}" ]; then
+	if [ ! -f .jdk_sunos_variant ]; then
+	    touch .jdk_sunos_variant
+	fi
+	echo "${JBUILDTYPE}" >> .jdk_sunos_variant
+    fi
+}
+
+#
 # install a copy of the jdk into the alternate area
 #
 # the argument can be either a tag, like a normal build, or
@@ -790,9 +816,11 @@ do_install() {
 
 #
 # create a versioned tarball of a jdk image
+# if there's variant information, use that to tag the name
 #
 do_export() {
     JDKVER=$1
+    JDKTARNAME="${JDKVER}"
     if [ ! -d "${JEXPORTDIR}" ]; then
 	mkdir -p "${JEXPORTDIR}"
     fi
@@ -810,6 +838,15 @@ do_export() {
     if [ ! -x "${NJDIR}/bin/java" ]; then
 	bail "unable to find java in build area"
     fi
+    #
+    # we've found it, look for variant information
+    #
+    if [ -f "${JBUILD}/${JDKVER}/.jdk_sunos_variant" ]; then
+	cat "${JBUILD}/${JDKVER}/.jdk_sunos_variant" | while read vdata
+	do
+	    JDKTARNAME="${JDKTARNAME}-${vdata}"
+	done
+    fi
     # looks like a successful build
     # the image we start from is unversioned, and we want a versioned
     # tarball that unpacks into a versioned directory
@@ -825,9 +862,9 @@ do_export() {
     cd ${JBUILD}/${JDKVER}/build/*/images
     tar cf - jdk | ( cd "$TDIR" ; tar xf -)
     cd "$TDIR"
-    mv jdk "$JDKVER"
-    tar cf - "$JDKVER" | gzip > "${JEXPORTDIR}/${JDKVER}.tar.gz"
-    ls -l "${JEXPORTDIR}/${JDKVER}.tar.gz"
+    mv jdk "$JDKTARNAME"
+    tar cf - "$JDKTARNAME" | gzip > "${JEXPORTDIR}/${JDKTARNAME}.tar.gz"
+    ls -l "${JEXPORTDIR}/${JDKTARNAME}.tar.gz"
 }
 
 #
@@ -1017,6 +1054,7 @@ else
     fi
     find_boot_jdk "${JPATCHDIR}/${mver}/${JDKALIAS}/build.sh"
     fixup_build_script "${JPATCHDIR}/${mver}/${JDKALIAS}/build.sh"
+    save_build_metadata
     echo "Running ${JPATCHDIR}/${mver}/${JDKALIAS}/build.sh"
     ${JPATCHDIR}/${mver}/${JDKALIAS}/build.sh
     #
