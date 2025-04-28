@@ -646,8 +646,9 @@ enable_configure_flags() {
     # there should be a --with-boot-jdk piece, expand that
     # (if there isn't, we fail in find_boot_jdk, so no need to check here)
     # need to used gsed for Solaris
+    # use ; as separator, need something that cannot occur in any option
     #
-    ${SED} -i "s:--with-boot-jdk:${extra_flags} --with-boot-jdk:" "${sfile}"
+    ${SED} -i "s;--with-boot-jdk;${extra_flags} --with-boot-jdk;" "${sfile}"
 }
 
 #
