@@ -329,7 +329,7 @@ initialize_test() {
     # the package version JTVER is the jtreg version with an extra digit
     # (usually zero) as the package build number
     #
-    JTVER=7.5.1.0
+    JTVER=7.5.2.0
     if [ ! -d jtreg ]; then
 	wget -O "${JCACHEDIR}/TRIBjtreg.${JTVER}.zap" https://pkgs.tribblix.org/tribblix-m36/TRIBjtreg.${JTVER}.zap
 	if [ ! -f "${JCACHEDIR}/TRIBjtreg.${JTVER}.zap" ]; then
